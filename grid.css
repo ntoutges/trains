@@ -1,0 +1,17 @@
+#background-grid {
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  width: 100vw;
+  height: 100vh;
+
+  background-color: transparent;
+}
+
+#background-grid.actives:hover {
+  cursor: grab;
+}
+
+#background-grid.actives[moving]:hover {
+  cursor: grabbing;
+}

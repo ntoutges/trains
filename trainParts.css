@@ -1,0 +1,23 @@
+#train-parts-container {
+  pointer-events: none;
+  overflow: hidden;
+}
+
+#train-parts-container {
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  width: 100vw;
+  height: 100vh;
+}
+
+.trainParts {
+  image-rendering: pixelated;
+  position: absolute;
+
+  transform: rotate(0rad);
+  user-select: none;
+
+  /* transition-property: transform;
+  transition-duration: 100ms; */
+}
