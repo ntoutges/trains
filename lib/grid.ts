@@ -5,34 +5,34 @@ const defaultColor = "#86bbc4";
 const originColor = "#c98d8d";
 
 const gridElement = $("#background-grid");
-const ctx = gridElement.get(0).getContext("2d");
+const ctx = ((gridElement!.get(0) as unknown) as HTMLCanvasElement)!.getContext("2d") as CanvasRenderingContext2D;
 
-const gridWidth = $("#background-grid").width();
-const gridHeight = $("#background-grid").height();
+const gridWidth = $("#background-grid").width() as number;
+const gridHeight = $("#background-grid").height() as number;
 
-gridElement.attr("width", gridWidth);
-gridElement.attr("height", gridHeight);
+gridElement.attr("width", `${gridWidth}px`);
+gridElement.attr("height", `${gridHeight}px`);
 
 var draggable = true;
 
 // start with origin at bottom left
-export const pos = {
+export const pos: { x: number, y:number } = {
   x: 0,
   y: gridHeight
 };
-var offPos = null;
+var offPos: { x: number, y:number } | null = null;
 
-ctx.strokeStyle = defaultColor;
+ctx!.strokeStyle = defaultColor;
 drawGrid();
 
 export const dragging = {
-  "startDrag": (x,y) => {
+  "startDrag": (x:number,y:number) => {
     if (!draggable) return false;
     gridElement.attr("moving", "1");
     offPos = { x,y };
     return true;
   },
-  "doDrag": (x,y) => {
+  "doDrag": (x:number,y:number) => {
     if (offPos == null) return draggable;
     pos.x += x - offPos.x;
     pos.y += y - offPos.y;
@@ -46,14 +46,14 @@ export const dragging = {
     moveListeners.forEach(funct => { funct(pos); });
     return true;
   },
-  "stopDrag": (x,y) => {
+  "stopDrag": (x:number,y:number) => {
     dragging.doDrag(x,y);
     offPos = null;
     gridElement.removeAttr("moving");
   }
 }
 
-export function setDraggable(state) {
+export function setDraggable(state: boolean) {
   if (draggable && !state) dragging.stopDrag(pos.x,pos.y);
 
   draggable = state;
@@ -72,7 +72,7 @@ export function getPos() {
 export function clearGrid() { ctx.clearRect(0,0, gridWidth, gridHeight); }
 export function drawGrid() { drawGridAt(pos.x, pos.y); }
 
-export function drawGridAt(x,y) {
+export function drawGridAt(x:number, y:number) {
   const startX = x % gridSize;
   const startY = y % gridSize;
 
@@ -83,7 +83,7 @@ export function drawGridAt(x,y) {
 
   ctx.stroke();
   drawMetaGridAt(x,y);
-  drawOrigin();
+  drawOrigin(x,y);
 }
 
 export function drawMetaGridAt(x,y) {
@@ -97,7 +97,7 @@ export function drawMetaGridAt(x,y) {
   ctx.stroke();
 }
 
-export function drawOrigin(x,y) {
+export function drawOrigin(x: number,y: number) {
   // unable to see origin, so no need to render
   if (x > gridWidth || x < 0) return;
   if (y > gridHeight || y < 0) return;
@@ -122,5 +122,12 @@ function vLine(x, y1,y2) {
   ctx.lineTo(x,y2);
 }
 
-const moveListeners = [];
-export function onMove(funct) { moveListeners.push(funct); }
+interface ListenerInterface {
+  x: number,
+  y: number
+}
+
+type ListenerType = (arg: ListenerInterface) => void;
+
+const moveListeners: ListenerType[] = [];
+export function onMove(funct: ListenerType) { moveListeners.push(funct); }

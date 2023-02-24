@@ -1,6 +1,5 @@
 import { Vector, Segment } from "./maths.js";
 import { onMove, pos } from "./grid.js";
-import * as obj from "./objects.js";
 
 const trackElement = $("#background-tracks");
 const ctx = trackElement.get(0).getContext("2d");
