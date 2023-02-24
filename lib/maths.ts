@@ -83,3 +83,5 @@ export function generateVectorList(points: Array<[x: number, y:number]>): Array<
   });
   return vectors;
 }
+
+export function sign(number: number) { return (number > 0) ? 1 : ((number < 0) ? -1 : 0); }

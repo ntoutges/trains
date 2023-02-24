@@ -1,8 +1,9 @@
-import { Vector, Segment } from "./maths.js";
-import { onMove, pos } from "./grid.js";
+import { Vector, Segment } from "./maths";
+import { onMove, pos } from "./grid";
+import { ObjHeader, Obj } from "./objects"
 
 const trackElement = $("#background-tracks");
-const ctx = trackElement.get(0).getContext("2d");
+const ctx = (trackElement.get(0) as HTMLCanvasElement).getContext("2d");
 
 const trackElWidth = $("#background-tracks").width();
 const trackElHeight = $("#background-tracks").height();
@@ -32,9 +33,12 @@ function renderObjects() {
 }
 
 
-export const tracks = [];
+export const tracks: Track[] = [];
 var objects = [];
 export class Track {
+  public s: Segment;
+  public t: Track[];
+  public c: Obj[];
   constructor({
     segment = new Segment({}),
     inTrack = null, // instance of Track
@@ -48,17 +52,17 @@ export class Track {
   get segment() { return this.s; }
 
   get inTrack() { return this.t[0]; }
-  set inTrack(track) { return this.t[0] = track; }
+  set inTrack(track) { this.t[0] = track; }
   get outTrack() { return this.t[1]; }
-  set outTrack(track) { return this.t[1] = track; }
+  set outTrack(track) { this.t[1] = track; }
 
   get length() { return this.segment.magnitude; }
 
-  searchForTrack(distance) { // returns [finalTrack, residualDistance]
+  searchForTrack(distance: number): ObjHeader { // returns [finalTrack, residualDistance]
     let dir = Math.sign(distance);
     let skipFirstItt = dir < 0;
     distance = Math.abs(distance);
-    let currentTrack = this;
+    let currentTrack: Track = this;
     while (true) {
       if (!skipFirstItt) { // effectively skip first itteration of loop
         distance -= currentTrack.length;
@@ -69,11 +73,11 @@ export class Track {
     }
   }
 
-  searchTrackFor(track) { // returns distance of [track] from this track
+  searchTrackFor(track: Track) { // returns distance of [track] from this track
     let foreDistance = 0;
     let backDistance = 0;
-    let forewardTrack = this;
-    let backwardTrack = this.inTrack;
+    let forewardTrack: Track = this;
+    let backwardTrack: Track = this.inTrack;
     while (forewardTrack != track && backwardTrack != track && (forewardTrack || backwardTrack)) {
       if (forewardTrack) {
         foreDistance += forewardTrack.length;
@@ -90,19 +94,19 @@ export class Track {
     return null;
   }
 
-  getTrackInDir(direction) { // -1 (inTrack) or 1 (outTrack)
+  getTrackInDir(direction: number) { // -1 (inTrack) or 1 (outTrack)
     return (direction < 0) ? this.inTrack : this.outTrack;
   }
 
-  getPosAt(distance) { // px from origin
+  getPosAt(distance: number) { // px from origin
     const percent = Math.min(Math.max(distance / this.length, 0), 1); // constrains [percent] within range [0,1]
     return this.segment.interpolate(percent);
   }
 
-  root(train) {
+  root(train: Obj) {
     this.c.push(train);
   }
-  unRoot(train) {
+  unRoot(train: Obj) {
     const index = this.c.indexOf(train);
     if (index == -1) return;
     this.c.splice(index, 1);
@@ -110,6 +114,8 @@ export class Track {
 }
 
 export class BridgeTrack extends Track {
+  private itA: boolean; // in track A enabled
+  private otA: boolean; // out track A enabled
   constructor({
     inTrackA=null,
     inTrackB=null,
@@ -130,12 +136,10 @@ export class BridgeTrack extends Track {
   set inTrack(track) {
     this.t[this.itA ? 0 : 2] = track;
     this.updateSegment();
-    return this.inTrack;
   }
   set outTrack(track) {
     this.t[this.otA ? 1 : 3] = track;
     this.updateSegment();
-    return this.outTrack;
   }
 
   switchInTrackState(state) {
@@ -193,19 +197,19 @@ export function generateTracks(vectors) { // Array<Vector>
   return tempTracks;
 }
 
-export function addTracks(newTracks) { // Array<Track>
+export function addTracks(newTracks: Track[]) { // Array<Track>
   newTracks.forEach((track) => {
     tracks.push(track);
   })
   renderTracks();
 }
 
-export function setTracks(newTracks) {
+export function setTracks(newTracks: Track[]) {
   tracks.splice(0);
   addTracks(newTracks);
 }
 
-export function appendPoint(point) { // point is a Vector
+export function appendPoint(point: Vector) { // point is a Vector
   if (tracks.length == 0) tracks.push(new Track({}));
   
   tracks.push(
@@ -220,7 +224,7 @@ export function appendPoint(point) { // point is a Vector
 
   if (tracks.length == 1) {
     tracks.splice(0,1); // get rid of temporary track
-    tracks.inTrack = null;
+    tracks[0].inTrack = null;
   }
   else {
     tracks[tracks.length-2].outTrack = tracks[tracks.length-1];
@@ -236,12 +240,12 @@ export function appendTrack(track) {
   addTracks([track]);
 }
 
-export function addObject(obj) {
+export function addObject(obj: Obj) {
   objects.push(obj);
   return obj;
 }
 
-export function removeObject(obj) {
+export function removeObject(obj: Obj) {
   const index = objects.indexOf(obj);
   if (index != -1) objects.splice(index, 1);
   return obj;

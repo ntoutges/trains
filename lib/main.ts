@@ -1,8 +1,8 @@
-import * as grid from "./grid.js";
-import * as math from "./maths.js";
-import * as tracks from "./tracks.js";
-import * as parts from "./trainParts.js";
-import * as trains from "./trains.js";
+import * as grid from "./grid";
+import * as math from "./maths";
+import * as tracks from "./tracks";
+import * as parts from "./trainParts";
+import * as trains from "./trains";
 
 var points = []
 
@@ -15,7 +15,7 @@ document.body.addEventListener("mousedown", (e) => {
   else if (e.button == 0) grid.dragging.startDrag(e.pageX, e.pageY);
   else if (e.button == 2) {
     const v = new math.Vector({x:e.pageX - grid.pos.x, y:-e.pageY + grid.pos.y});
-    tracks.appendPoint(v, -1);
+    tracks.appendPoint(v);
   }
 });
 document.body.addEventListener("mouseup", (e) => { grid.dragging.stopDrag(e.pageX, e.pageY); });

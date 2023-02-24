@@ -2,6 +2,7 @@ import { Vector } from "./maths";
 import { Track } from "./tracks";
 
 type Followers = FastFollower | FloatingFollower | Tracer;
+export type ObjHeader = [track: Track, extra: number] | null;
 
 export class Obj {
   public p: Vector;
@@ -40,7 +41,7 @@ export class Obj {
 }
 
 export class Tracer extends Obj {
-  public h: [track: Track, extra: number] | null;
+  public h: ObjHeader
   public r: Track | null;
   public f: Array<Followers>;
   public en: boolean;
@@ -68,8 +69,8 @@ export class Tracer extends Obj {
       let toAdjust = 0;
       let limitFollower = null;
       this.f.forEach((follower) => {
-        const code = follower.tick();
-        if (code < toAdjust) {
+        const code = parseInt(follower.tick().toString());
+        if (!isNaN(code) && code < toAdjust) {
           limitFollower = follower;
           toAdjust = code;
         }

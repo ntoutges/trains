@@ -1,16 +1,16 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.onMove = exports.drawOrigin = exports.drawMetaGridAt = exports.drawGridAt = exports.drawGrid = exports.clearGrid = exports.getPos = exports.getDraggable = exports.setDraggable = exports.dragging = exports.pos = void 0;
-const gridSize = 50;
-const metaGridSize = 5;
-const defaultColor = "#86bbc4";
-const originColor = "#c98d8d";
-const gridElement = $("#background-grid");
-const ctx = gridElement.get(0).getContext("2d");
-const gridWidth = $("#background-grid").width();
-const gridHeight = $("#background-grid").height();
-gridElement.attr("width", `${gridWidth}px`);
-gridElement.attr("height", `${gridHeight}px`);
+var gridSize = 50;
+var metaGridSize = 5;
+var defaultColor = "#86bbc4";
+var originColor = "#c98d8d";
+var gridElement = $("#background-grid");
+var ctx = gridElement.get(0).getContext("2d");
+var gridWidth = $("#background-grid").width();
+var gridHeight = $("#background-grid").height();
+gridElement.attr("width", "".concat(gridWidth, "px"));
+gridElement.attr("height", "".concat(gridHeight, "px"));
 var draggable = true;
 // start with origin at bottom left
 exports.pos = {
@@ -21,14 +21,14 @@ var offPos = null;
 ctx.strokeStyle = defaultColor;
 drawGrid();
 exports.dragging = {
-    "startDrag": (x, y) => {
+    "startDrag": function (x, y) {
         if (!draggable)
             return false;
         gridElement.attr("moving", "1");
-        offPos = { x, y };
+        offPos = { x: x, y: y };
         return true;
     },
-    "doDrag": (x, y) => {
+    "doDrag": function (x, y) {
         if (offPos == null)
             return draggable;
         exports.pos.x += x - offPos.x;
@@ -37,10 +37,10 @@ exports.dragging = {
         offPos.y = y;
         clearGrid();
         drawGrid();
-        moveListeners.forEach(funct => { funct(exports.pos); });
+        moveListeners.forEach(function (funct) { funct(exports.pos); });
         return true;
     },
-    "stopDrag": (x, y) => {
+    "stopDrag": function (x, y) {
         exports.dragging.doDrag(x, y);
         offPos = null;
         gridElement.removeAttr("moving");
@@ -67,15 +67,15 @@ exports.clearGrid = clearGrid;
 function drawGrid() { drawGridAt(exports.pos.x, exports.pos.y); }
 exports.drawGrid = drawGrid;
 function drawGridAt(x, y) {
-    const startX = x % gridSize;
-    const startY = y % gridSize;
+    var startX = x % gridSize;
+    var startY = y % gridSize;
     ctx.beginPath();
     ctx.lineWidth = 1;
-    for (let x = startX; x < gridWidth; x += gridSize) {
-        vLine(x, 0, gridHeight);
+    for (var x_1 = startX; x_1 < gridWidth; x_1 += gridSize) {
+        vLine(x_1, 0, gridHeight);
     }
-    for (let y = startY; y < gridHeight; y += gridSize) {
-        hLine(y, 0, gridWidth);
+    for (var y_1 = startY; y_1 < gridHeight; y_1 += gridSize) {
+        hLine(y_1, 0, gridWidth);
     }
     ctx.stroke();
     drawMetaGridAt(x, y);
@@ -83,15 +83,15 @@ function drawGridAt(x, y) {
 }
 exports.drawGridAt = drawGridAt;
 function drawMetaGridAt(x, y) {
-    const startX = x % (gridSize * metaGridSize);
-    const startY = y % (gridSize * metaGridSize);
+    var startX = x % (gridSize * metaGridSize);
+    var startY = y % (gridSize * metaGridSize);
     ctx.beginPath();
     ctx.lineWidth = 5;
-    for (let x = startX; x < gridWidth; x += gridSize * metaGridSize) {
-        vLine(x, 0, gridHeight);
+    for (var x_2 = startX; x_2 < gridWidth; x_2 += gridSize * metaGridSize) {
+        vLine(x_2, 0, gridHeight);
     }
-    for (let y = startY; y < gridHeight; y += gridSize * metaGridSize) {
-        hLine(y, 0, gridWidth);
+    for (var y_2 = startY; y_2 < gridHeight; y_2 += gridSize * metaGridSize) {
+        hLine(y_2, 0, gridWidth);
     }
     ctx.stroke();
 }
@@ -119,7 +119,7 @@ function vLine(x, y1, y2) {
     ctx.moveTo(x, y1);
     ctx.lineTo(x, y2);
 }
-const moveListeners = [];
+var moveListeners = [];
 function onMove(funct) { moveListeners.push(funct); }
 exports.onMove = onMove;
 //# sourceMappingURL=grid.js.map
