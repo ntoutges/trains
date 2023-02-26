@@ -1,11 +1,21 @@
 import * as parts from "./trainParts.js";
 import * as obj from "./objects.js";
 import * as math from "./maths.js";
-import { pos } from "./grid.js";
+import { pos, onMove } from "./grid.js";
 import { tracks, renderTracks, addObject, Track } from "./tracks.js";
 
 const conatiner = $("#train-parts-container");
 const trainCars = [];
+
+let oldZoom = 1;
+onMove((pos) => {
+  if (pos.a != oldZoom) { // detect when zoom changed
+    trainCars.forEach((part) => {
+      part.updateImageSize();
+    })
+    oldZoom = pos.a;
+  }
+});
 
 interface RollingStockInterface {
   box: parts.TrainBox
@@ -40,11 +50,15 @@ export class RollingStock {
   }
   render() {
     this.box.updateGraphics(true);
-    const [x,y] = this.box.o.getScreenCoords(pos.x, pos.y);
+    const [x,y] = this.box.o.getScreenCoords(pos.x, pos.y, pos.a);
     // subtraction to center image
-    this.e.css("left", x-this.box.o.b.x/2);
-    this.e.css("top", y-this.box.o.b.y/2);
+    this.e.css("left", x - this.box.o.b.x / (2*pos.a));
+    this.e.css("top", y - this.box.o.b.y / (2*pos.a));
     this.e.css("transform", `rotate(${this.box.o.r}rad)`);
+  }
+  updateImageSize() {
+    this.e.css("width", this.box.o.b.x / pos.a);
+    this.e.css("height", this.box.o.b.y / pos.a);
   }
 
   coupleTo(locomotive: RollingStock, distance=10) {
@@ -67,10 +81,16 @@ export class RollingStock {
     this.cf.cb = null;
     this.cf = null;
   }
+
+  accelerateTo(finalValue=0, acc=0.1) {
+    if (this.cf) this.cf.accelerateTo(finalValue, acc);
+    // if no front end locomotive, don't do anything, as there is no locomotive
+  }
 }
 
 interface LocomotiveInterface {
-  tracks: Track[]
+  tracks: Track[],
+  locomotive?: RollingStock
   bounds?: math.Vector
   truckInset?: number
   truckMidpointWeight?: number
@@ -84,6 +104,7 @@ export class Locomotive extends RollingStock {
   public l: obj.LocomotiveTracer;
   constructor({
     tracks,
+    locomotive = null,
     bounds=new math.Vector({ x:430,y:70 }), // x=width, y=length
     truckInset=80, // distance from center of truck to edge of box
     truckMidpointWeight=0.5,
@@ -113,9 +134,11 @@ export class Locomotive extends RollingStock {
 
     this.r = null; // root track
     this.l = loco;
+    if (locomotive) { this.coupleTo(locomotive); }
   }
   
   accelerateTo(finalValue=0, acc=0.1) {
+    if (this.cf) this.cf.accelerateTo(finalValue, acc); // must pass task of accelerating to front end locomotive
     this.l.accelerateTo(finalValue, acc);
   }
   getVelocity() { return this.l.velocity; }
@@ -167,9 +190,20 @@ export class HeadlessLocomotive extends Locomotive {
   }
 }
 
+interface CarInterface {
+  tracks: Track[]
+  locomotive?: RollingStock
+  source?: string
+  bounds?: math.Vector
+  truckInset?: number
+  truckMidpointWeight?: number
+  truckSpacing?: number
+  truckAxles?: number
+}
+
 export class Car extends RollingStock {
   constructor({
-    locomotive,
+    locomotive=null,
     tracks,
     bounds=new math.Vector({ x:300,y:70 }), // x=width, y=length
     truckInset=60, // distance from center of truck to edge of box
@@ -177,7 +211,7 @@ export class Car extends RollingStock {
     truckSpacing=40,
     truckAxles=2,
     source="wagon.png"
-  }) {
+  }: CarInterface) {
     super({
       box: new parts.TrainBox({
         bounds,

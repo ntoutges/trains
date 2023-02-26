@@ -4,24 +4,24 @@ import * as obj from "./objects.js";
 import { Vector } from "./maths.js";
 
 const conatiner = $("#train-parts-container");
-// const trainParts = [];
+const trainParts: TrainPart[] = [];
 
-// export function addTrainPart(part) {
-//   trainParts.push(part);
-//   return part;
-// }
-
-// export function removeTrainPart(part) {
-//   const index = trainParts.indexOf(part);
-//   if (index != -1) trainParts.splice(index, 1);
-//   return part;
-// }
+let oldZoom = 1;
+grid.onMove((pos) => {
+  if (pos.a != oldZoom) { // detect when zoom changed
+    trainParts.forEach((part) => {
+      part.updateImageSize();
+    })
+    oldZoom = pos.a;
+  }
+});
 
 export class TrainPart {
   public o: obj.Followers;
   public s: string;
   public b: Vector;
   public e: JQuery<HTMLImageElement>;
+  private oZ: number;
   constructor({
     source="missing.png",
     object,
@@ -32,6 +32,8 @@ export class TrainPart {
     this.b = size;
     this.e = $(`<img src=\"graphics/${source}\" class=\"trainParts\" style=\"width:${size.x}px;height:${size.y}px;\"></img>`);
     conatiner.append(this.e);
+
+    trainParts.push(this);
   }
   tick(...params) {
     switch (this.o.type) {
@@ -49,12 +51,17 @@ export class TrainPart {
     // this.updateGraphics(true);
   }
   updateGraphics(updateRotation=true) {
-    const [x,y] = this.o.getScreenCoords(grid.pos.x, grid.pos.y);
-    this.e.css("left", x-this.b.x/2);
-    this.e.css("top", y-this.b.y/2);
+    const [x,y] = this.o.getScreenCoords(grid.pos.x, grid.pos.y, grid.pos.a);
+    this.e.css("left", x-this.b.x / (2*grid.pos.a));
+    this.e.css("top", y-this.b.y / (2*grid.pos.a));
+    
     if (updateRotation) this.updateRotation(-this.o.rotation);
   }
-  updateRotation(rotation) { this.e.css("transform", `rotate(${rotation}rad)`); }
+  updateRotation(rotation: number) { this.e.css("transform", `rotate(${rotation}rad)`); }
+  updateImageSize() {
+    this.e.css("width", this.b.x / grid.pos.a);
+    this.e.css("height", this.b.y / grid.pos.a);
+  }
 
   get rotation() { return this.o.rotation; }
   get type() { return this.o.type; }

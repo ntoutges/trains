@@ -4,6 +4,8 @@ import * as tracks from "./tracks.js";
 // import * as parts from "./trainParts.js";
 import * as trains from "./trains.js";
 import { TrackNetwork, TrackSystem } from "./metaTracks.js";
+import { Consist } from "./consist.js";
+import { Options } from "./consistLookup.js";
 
 document.body.addEventListener("mousedown", (e) => {
 
@@ -13,12 +15,16 @@ document.body.addEventListener("mousedown", (e) => {
   }
   else if (e.button == 0) grid.dragging.startDrag(e.pageX, e.pageY);
   else if (e.button == 2) {
-    const v = new math.Vector({x:e.pageX - grid.pos.x, y:-e.pageY + grid.pos.y});
+    const v = new math.Vector({x:e.pageX*grid.pos.a - grid.pos.x, y:-e.pageY*grid.pos.a + grid.pos.y});
     tracks.appendPoint(v);
   }
 });
 document.body.addEventListener("mouseup", (e) => { grid.dragging.stopDrag(e.pageX, e.pageY); });
 document.body.addEventListener("mousemove", (e) => { grid.dragging.doDrag(e.pageX, e.pageY); });
+document.body.addEventListener("keydown", (e) => {
+  if (e.keyCode == 187) grid.dragging.doZoom(-1);
+  else if (e.keyCode == 189) grid.dragging.doZoom(1);
+});
 
 document.body.oncontextmenu = (e) => { e.preventDefault(); }
 
@@ -85,31 +91,51 @@ const in1 = new tracks.Track({
 // tracks.addTracks([bridge])
 // tracks.addTracks([out1, out2, in1])
 
-const loco = new trains.FastLocomotive({
-  tracks: tracks.tracks,
-  keys: {
-    0: ["accelerateTo", 0, 0.1],
-    38: ["accelerateTo", 4,0.1],
-    40: ["accelerateTo",-4,0.1],
-    32:["uncouple", -1]
-  }
-});
+// const loco = new trains.FastLocomotive({
+//   tracks: tracks.tracks,
+//   keys: {
+//     0: ["accelerateTo", 0, 0.1],
+//     38: ["accelerateTo", 4,0.1],
+//     40: ["accelerateTo",-4,0.1],
+//     32:["uncouple", -1]
+//   }
+// });
 
+// const car1 = new trains.Car({
+//   locomotive: loco,
+//   tracks: tracks.tracks
+// })
 
-const car1 = new trains.Car({
-  locomotive: loco,
-  tracks
-})
-
-const car2 = new trains.Car({
-  locomotive: car1,
-  tracks
-})
+// const car2 = new trains.Car({
+//   locomotive: car1,
+//   tracks: tracks.tracks
+// })
 
 // new trains.Car({
 //   locomotive: car2,
-//   tracks
+//   tracks: tracks.tracks
 // })
+
+const consist = new Consist({
+  sequence: [
+    Options.Car,
+    Options.Head,
+    Options.Car,
+    Options.Car,
+    Options.Car
+  ],
+  tracks: tracks.tracks
+});
+
+const loco = consist.getRollingStockByType(Options.Head)[1]
+document.addEventListener("keydown", (e) => {
+  if (e.keyCode == 38) loco.accelerateTo(1, 0.01);
+  else if (e.keyCode == 40) loco.accelerateTo(-1, 0.01);
+})
+
+document.addEventListener("keyup", (e) => {
+  if ([38,40].includes(e.keyCode)) loco.accelerateTo(0, 0.01);
+})
 
 setInterval(() => {
   trains.tickTrains(true);

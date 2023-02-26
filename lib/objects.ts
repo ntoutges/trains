@@ -13,13 +13,13 @@ export class Obj {
     this.p = pos;
     this.c = color;
   }
-  getScreenCoords(offX: number, offY: number): [x: number, y:number] {
+  getScreenCoords(offX: number, offY: number, zoom: number): [x: number, y:number] {
     return [
-      this.p.x + offX,
-      -this.p.y + offY
+      (this.p.x + offX) / zoom,
+      (-this.p.y + offY) / zoom
     ];
   }
-  render(ctx: CanvasRenderingContext2D, offX:number=0, offY:number=0) {
+  render(ctx: CanvasRenderingContext2D, offX:number=0, offY:number=0, zoom: number=1) {
     ctx.beginPath();
     const oldStyle = ctx.strokeStyle;
     const oldWidth = ctx.lineWidth;
@@ -29,7 +29,8 @@ export class Obj {
       ctx,
       this.getScreenCoords(
         offX,
-        offY
+        offY,
+        zoom
       ).concat(
         10,0,Math.PI*2
       )
@@ -303,7 +304,7 @@ export class FloatingFollower extends Obj {
   set leader(leader) { this.l1 = leader; }
   get leader() { return this.l1; }
 
-  render(ctx, offX=0, offY=0) {
+  render(ctx, offX=0, offY=0, zoom=1) {
     ctx.beginPath();
     const oldStyle = ctx.strokeStyle;
     const oldWidth = ctx.lineWidth;
@@ -313,14 +314,15 @@ export class FloatingFollower extends Obj {
       ctx,
       this.getScreenCoords(
         offX,
-        offY
+        offY,
+        zoom
       ).concat(
         6,0,Math.PI*2
       )
     );
-    ctx.moveTo.apply(ctx, this.l1.getScreenCoords(offX,offY));
-    ctx.lineTo.apply(ctx, this.getScreenCoords(offX,offY));
-    ctx.lineTo.apply(ctx, this.l2.getScreenCoords(offX,offY));    
+    ctx.moveTo.apply(ctx, this.l1.getScreenCoords(offX,offY,zoom));
+    ctx.lineTo.apply(ctx, this.getScreenCoords(offX,offY,zoom));
+    ctx.lineTo.apply(ctx, this.l2.getScreenCoords(offX,offY,zoom));    
     ctx.stroke();
     ctx.strokeStyle = oldStyle;
     ctx.lineWidth = oldWidth;
@@ -349,17 +351,17 @@ export class Box extends Obj {
   get pos() { return this.p; }
   get rotation() { return this.r; }
 
-  centerOn(pos1, pos2) {
+  centerOn(pos1: Vector, pos2: Vector) {
     this.p = pos1.scale(0.5).add(pos2.scale(0.5));
     this.r = -Math.atan2(pos1.y-pos2.y, pos1.x-pos2.x);
   }
 
-  render(ctx, offX=0, offY=0) {
+  render(ctx, offX=0, offY=0, zoom=1) {
     ctx.beginPath();
     const oldStyle = ctx.strokeStyle;
     const oldFill = ctx.fillStyle;
     const oldWidth = ctx.lineWidth;
-    const coords = this.getScreenCoords(offX,offY)
+    const coords = this.getScreenCoords(offX,offY,zoom)
 
     ctx.strokeStyle = this.c;
     ctx.fillStyle = this.c;
@@ -367,7 +369,7 @@ export class Box extends Obj {
     ctx.translate(coords[0], coords[1]);
     ctx.rotate(this.r);
     ctx.translate(-coords[0], -coords[1]);
-    ctx.rect(coords[0] - this.b.x/2, coords[1] - this.b.y/2, this.b.x, this.b.y);
+    ctx.rect(coords[0] - this.b.x/(2*zoom), coords[1] - this.b.y/(2*zoom), this.b.x / zoom, this.b.y / zoom);
     ctx.stroke();
     ctx.globalAlpha = this.a;
     ctx.fill();

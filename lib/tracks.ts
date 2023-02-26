@@ -19,8 +19,8 @@ export function renderTracks() {
   ctx.clearRect(0,0, trackElWidth, trackElHeight);
   ctx.beginPath();
   tracks.forEach((track) => {
-    ctx.moveTo(track.segment.x1 + pos.x, -track.segment.y1 + pos.y);
-    ctx.lineTo(track.segment.x2 + pos.x, -track.segment.y2 + pos.y);
+    ctx.moveTo((track.segment.x1 + pos.x) / pos.a, (-track.segment.y1 + pos.y) / pos.a);
+    ctx.lineTo((track.segment.x2 + pos.x) / pos.a, (-track.segment.y2 + pos.y) / pos.a);
   });
   ctx.stroke();
   renderObjects();
@@ -28,7 +28,7 @@ export function renderTracks() {
 
 function renderObjects() {
   objects.forEach((obj) => {
-    obj.render(ctx, pos.x,pos.y);
+    obj.render(ctx, pos.x,pos.y,pos.a);
   });
 }
 

@@ -109,7 +109,6 @@ export class TrackSystem {
       }
       for (let networkId in bridgeInfo[1]) { outTracks.push(networks[networkId].firstTrack); }
 
-      console.log(inTracks, outTracks)
       this.b.push(
         new BridgeTrack({
           inTracks,

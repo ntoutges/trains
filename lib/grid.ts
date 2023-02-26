@@ -1,5 +1,6 @@
 const gridSize = 50;
-const metaGridSize = 5;
+const metaGridSize = 4;
+const ZOOM_POWER = 1.1;
 
 const defaultColor = "#86bbc4";
 const originColor = "#c98d8d";
@@ -14,13 +15,16 @@ gridElement.attr("width", `${gridWidth}px`);
 gridElement.attr("height", `${gridHeight}px`);
 
 var draggable = true;
+var gridLevel = 0;
+var rawGridSize = gridSize;
 
 // start with origin at bottom left
-export const pos: { x: number, y:number } = {
+export const pos: { x: number, y:number, a:number } = {
   x: 0,
-  y: gridHeight
+  y: gridHeight,
+  a: 1 // zoom value
 };
-var offPos: { x: number, y:number } | null = null;
+var offPos: { x: number, y:number, v:boolean } = { x:0, y:0, v:false }; // v=valid
 
 ctx!.strokeStyle = defaultColor;
 drawGrid();
@@ -29,16 +33,25 @@ export const dragging = {
   "startDrag": (x:number,y:number) => {
     if (!draggable) return false;
     gridElement.attr("moving", "1");
-    offPos = { x,y };
+    offPos.x = pos.a * x;
+    offPos.y = pos.a * y;
+    offPos.v = true;
     return true;
   },
-  "doDrag": (x:number,y:number) => {
-    if (offPos == null) return draggable;
-    pos.x += x - offPos.x;
-    pos.y += y - offPos.y;
-  
+  "doDrag": (x:number,y:number, forceDrag:boolean = false) => {
+    x *= pos.a;
+    y *= pos.a;
+
+    const oldOffX = offPos.x;
+    const oldOffY = offPos.y;
     offPos.x = x;
     offPos.y = y;
+
+    if (!offPos.v && !forceDrag) return draggable;
+    
+    pos.x += x - oldOffX;
+    pos.y += y - oldOffY;  
+
 
     clearGrid();
     drawGrid();
@@ -46,9 +59,27 @@ export const dragging = {
     moveListeners.forEach(funct => { funct(pos); });
     return true;
   },
+  "doZoom": (direction: number) => {
+    // if (!offPos.v) return draggable;
+
+    const oldZoom = pos.a;
+    pos.a *= ZOOM_POWER ** Math.sign(direction);
+    const oldV = offPos.v;
+    dragging.doDrag(
+      offPos.x / oldZoom,
+      offPos.y / oldZoom,
+      true
+    );
+    // moveListeners.forEach(funct => { funct(pos); });
+
+    clearGrid();
+    drawGrid();
+    
+    return true;
+  },
   "stopDrag": (x:number,y:number) => {
     dragging.doDrag(x,y);
-    offPos = null;
+    offPos.v = false;
     gridElement.removeAttr("moving");
   }
 }
@@ -72,14 +103,27 @@ export function getPos() {
 export function clearGrid() { ctx.clearRect(0,0, gridWidth, gridHeight); }
 export function drawGrid() { drawGridAt(pos.x, pos.y); }
 
-export function drawGridAt(x:number, y:number) {
-  const startX = x % gridSize;
-  const startY = y % gridSize;
+export async function drawGridAt(x:number, y:number) {
+  if (rawGridSize/pos.a < gridSize) {
+    gridLevel++;
+    rawGridSize = gridSize * metaGridSize**gridLevel;
+  }
+  else if (rawGridSize/pos.a > gridSize*metaGridSize) {
+    gridLevel--;
+    rawGridSize = gridSize * metaGridSize**gridLevel;
+  }
+
+  const startX = x % rawGridSize;
+  const startY = y % rawGridSize;
 
   ctx.beginPath();
   ctx.lineWidth = 1;
-  for (let x = startX; x < gridWidth; x += gridSize) { vLine(x, 0,gridHeight); }
-  for (let y = startY; y < gridHeight; y += gridSize) { hLine(y, 0,gridWidth); }
+
+  const width = gridWidth * pos.a;
+  const height = gridHeight * pos.a;
+
+  for (let x = startX; x < width; x += rawGridSize) { vLine(x/pos.a, 0,gridHeight); }
+  for (let y = startY; y < height; y += rawGridSize) { hLine(y/pos.a, 0,gridWidth); }
 
   ctx.stroke();
   drawMetaGridAt(x,y);
@@ -87,44 +131,48 @@ export function drawGridAt(x:number, y:number) {
 }
 
 export function drawMetaGridAt(x,y) {
-  const startX = x % (gridSize*metaGridSize);
-  const startY = y % (gridSize*metaGridSize);
+  const startX = x % (rawGridSize*metaGridSize);
+  const startY = y % (rawGridSize*metaGridSize);
 
   ctx.beginPath();
   ctx.lineWidth = 5;
-  for (let x = startX; x < gridWidth; x += gridSize*metaGridSize) { vLine(x, 0,gridHeight); }
-  for (let y = startY; y < gridHeight; y += gridSize*metaGridSize) { hLine(y, 0,gridWidth); }
+
+  const width = gridWidth * pos.a;
+  const height = gridHeight * pos.a;
+
+  for (let x = startX; x < width; x += rawGridSize*metaGridSize) { vLine(x/pos.a, 0,gridHeight); }
+  for (let y = startY; y < height; y += rawGridSize*metaGridSize) { hLine(y/pos.a, 0,gridWidth); }
   ctx.stroke();
 }
 
 export function drawOrigin(x: number,y: number) {
   // unable to see origin, so no need to render
-  if (x > gridWidth || x < 0) return;
-  if (y > gridHeight || y < 0) return;
+  if ((x > gridWidth || x < 0) && (y > gridHeight || y < 0)) return;
 
   ctx.beginPath();
   ctx.strokeStyle = originColor;
   ctx.lineWidth = 6; // origin always part of mega grid
-  hLine(pos.y, 0,gridWidth);
-  vLine(pos.x, 0,gridHeight);
+  hLine(pos.y / pos.a, 0,gridWidth);
+  vLine(pos.x / pos.a, 0,gridHeight);
   ctx.stroke();
 
   ctx.strokeStyle = defaultColor;
 }
 
-function hLine(y, x1,x2) {
+function hLine(y: number, x1: number,x2: number) {
   ctx.moveTo(x1,y);
   ctx.lineTo(x2,y);
 }
 
-function vLine(x, y1,y2) {
+function vLine(x: number, y1: number,y2: number) {
   ctx.moveTo(x,y1);
   ctx.lineTo(x,y2);
 }
 
 interface ListenerInterface {
   x: number,
-  y: number
+  y: number,
+  a: number
 }
 
 type ListenerType = (arg: ListenerInterface) => void;
