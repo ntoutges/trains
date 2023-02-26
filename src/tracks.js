@@ -137,7 +137,7 @@ export class BridgeTrack extends Track {
         if (this.t[3])
             this.t[3].inTrack = state ? null : this;
         this.updateSegment();
-        return false; // switched properly
+        return true; // switched properly
     }
     updateSegment() {
         if (!this.inTrack || !this.outTrack) {

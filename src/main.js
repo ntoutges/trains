@@ -64,14 +64,15 @@ var state = true;
 document.body.addEventListener("click", () => {
     state = !state;
     if (!bridge.switchOutTrackState(state)) {
+        console.log("Unswitched");
         state = !state; // undo if not switched
     }
 });
 tracks.appendTrack(bridge);
 tracks.addTracks([out1, out2]);
-// setInterval(() => {
-//   console.log(bridge.c.length)
-// }, 100);
+setInterval(() => {
+    console.log(bridge.c.length);
+}, 100);
 // const switchTrack = new tracks.OutSwitchTrack({
 //   inTrack: tracks.tracks[tracks.tracks.length-1],
 //   segmentA: new math.Segment({
@@ -97,7 +98,4 @@ tracks.addTracks([out1, out2]);
 // })
 // tracks.tracks[tracks.tracks.length-1].outTrack = switchTrack;
 // tracks.addTracks([ switchTrack ])
-// setInterval(() => {
-//   switchTrack.cs = !switchTrack.cs;
-// }, 1000)
 //# sourceMappingURL=main.js.map

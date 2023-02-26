@@ -150,13 +150,13 @@ export class BridgeTrack extends Track {
     this.updateSegment();
     return true; // switched properly
   }
-  switchOutTrackState(state) {
+  switchOutTrackState(state: boolean) {
     if (this.c.length != 0) return false; // unable to switch -- train in the way
     this.otA = state;
     if (this.t[1]) this.t[1].inTrack = state ? this : null;
     if (this.t[3]) this.t[3].inTrack = state ? null : this;
     this.updateSegment();
-    return false; // switched properly
+    return true; // switched properly
   }
 
   updateSegment() {

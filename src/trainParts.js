@@ -22,7 +22,19 @@ export class TrainPart {
         conatiner.append(this.e);
     }
     tick(...params) {
-        this.o.tick.apply(this.o, params);
+        switch (this.o.type) {
+            case 0: // tick needs no parameter
+                this.o.tick();
+                break;
+            case 1: // tick needs origin track
+                this.o.tickO.apply(this.o, params);
+                break;
+            case 2: // tick needs closest track
+                if (tracks.closestTrackData)
+                    this.o.tickC.apply(this.o, params);
+                break;
+        }
+        // this.o.tick.apply(this.o, params);
         // this.updateGraphics(true);
     }
     updateGraphics(updateRotation = true) {

@@ -35,7 +35,9 @@ export class RollingStock {
     trainCars.push(this);
   }
 
-  tick(...params) { this.box.tick.apply(this.box, params); }
+  tick(...params) {
+    this.box.tick.apply(this.box, params);
+  }
   render() {
     this.box.updateGraphics(true);
     const [x,y] = this.box.o.getScreenCoords(pos.x, pos.y);
