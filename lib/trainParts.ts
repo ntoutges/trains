@@ -18,6 +18,10 @@ const conatiner = $("#train-parts-container");
 // }
 
 export class TrainPart {
+  public o: obj.Followers;
+  public s: string;
+  public b: Vector;
+  public e: JQuery<HTMLImageElement>;
   constructor({
     source="missing.png",
     object,
@@ -54,6 +58,8 @@ export class TrainPart {
 }
 
 export class TrainParts {
+  public p: Array<TrainPart>;
+  public ob: Array<obj.Tickable>
   constructor({
     parts = [], // part at index 0 needs to be the leader Object, and index (len-1) must be follower Object
     objects = []
@@ -93,10 +99,15 @@ export class TrainParts {
   show() { this.p.forEach((part) => { part.show(); })}
 }
 
+interface TrainAxleInterface {
+  object: obj.Followers
+}
+
 export class TrainAxle extends TrainPart {
+  public f2: Array<obj.Followers>;
   constructor({
     object
-  }) {
+  }: TrainAxleInterface) {
     super({
       source: "axle.png",
       object,
@@ -105,9 +116,9 @@ export class TrainAxle extends TrainPart {
     this.f2 = null;
   }
 
-  coupleTo(axle, distance=100) {
+  coupleTo(axle: TrainAxle, distance=100) {
     if (this.f2 != null) return;
-    const followers = this.o.f;
+    const followers = (this.o as obj.Tracer).f; // "as" prevents errors
     const oldObject = tracks.removeObject(this.o);
     this.o = tracks.addObject(
       new obj.SlowFollower({
@@ -115,7 +126,7 @@ export class TrainAxle extends TrainPart {
         distance: -distance,
         color: "#ff0000"
       })
-    );
+    ) as obj.SlowFollower;
     if (!followers) return;
     for (const follower of followers) {
       if (follower.leader == oldObject) follower.leader = this.o;
@@ -130,10 +141,10 @@ export class TrainAxle extends TrainPart {
     const followers = this.f2;
     this.f2 = null;
 
-    const oldObject = tracks.removeObject(this.o);
+    const oldObject = tracks.removeObject(this.o) as obj.Followers;
     this.o = tracks.addObject(
       new obj.AutoTracer({ step: 1 })
-    );
+    ) as obj.AutoTracer;
     this.o.h = oldObject.h;
     this.o.p = oldObject.p;
     
@@ -142,7 +153,7 @@ export class TrainAxle extends TrainPart {
       oldObject.unfollow(follower);
       this.o.follow(follower);
     }
-    oldObject.l.unfollow(oldObject);
+    (oldObject as obj.FastFollower).l.unfollow(oldObject);
   }
 }
 
@@ -154,8 +165,8 @@ export class TrainTruck extends TrainParts {
     midpointWeight=null
   }) {
     if (axles < 1) throw new Error("Invald axle count");
-    const parts = [];
-    const objects = [];
+    const parts: Array<TrainPart> = [];
+    const objects: Array<obj.Obj> = [];
     parts.push(new TrainAxle({ object }));
 
     if (axles >= 2) {
@@ -165,7 +176,7 @@ export class TrainTruck extends TrainParts {
           leader: object,
           distance: -(axles-1) * spacing
         })
-        );
+      ) as obj.SlowFollower;
         for (let i = 1; i < followingAxles; i++) {
           parts.push(
             new TrainAxle({
@@ -175,7 +186,7 @@ export class TrainTruck extends TrainParts {
                 leaderB: follower,
                 weight: (i / followingAxles)
               })
-            )
+            ) as obj.FloatingFollower
           })
         )
       }
@@ -189,7 +200,7 @@ export class TrainTruck extends TrainParts {
               leaderB: follower,
               weight: midpointWeight
             })
-          )
+          ) as obj.FloatingFollower
         );
       }
     }
@@ -198,10 +209,10 @@ export class TrainTruck extends TrainParts {
   }
 
   get rotation() { return this.p[0].rotation; }
-  get midpoint() { return (this.ob.length > 0) ? this.ob[0] : this.p[0].o; }
+  get midpoint() { return (this.ob.length > 0) ? (this.ob[0] as obj.FloatingFollower) : (this.p[0].o as obj.StrictFollowers); }
 
-  getAxle(num) {
-    return this.p[(num < 0) ? num + this.p.length : num]
+  getAxle(index: number) {
+    return this.p[(index < 0) ? index + this.p.length : index] as TrainAxle;
   }
 
   // back coupler couples/uncouples from front coupler
@@ -210,6 +221,7 @@ export class TrainTruck extends TrainParts {
 }
 
 export class TrainBox extends TrainParts {
+  public i: number // inset
   constructor({
     bounds=new Vector({ x:170,y:70 }), // x=width, y=length
     object,
@@ -257,8 +269,8 @@ export class TrainBox extends TrainParts {
     this.i = truckInset - ((truckAxles-1) * truckSpacing) * (1-truckMidpointWeight);
   }
 
-  get frontTruck() { return this.p[0]; }
-  get backTruck() { return this.p[1]; }
+  get frontTruck() { return this.p[0] as unknown as TrainTruck; }
+  get backTruck() { return this.p[1] as unknown as TrainTruck; }
   get box() { return this.ob[0]; }
 
   get h() { return this.frontTruck.getAxle(0).o.h; }
@@ -267,6 +279,8 @@ export class TrainBox extends TrainParts {
   // back coupler couples/uncouples from front coupler
   coupleTo(box, couplerLength=10) { this.frontTruck.coupleTo(box.backTruck, this.i + box.i + couplerLength); }
   uncouple() { this.frontTruck.uncouple(); }
+
+  get o() { return super.o as obj.CenteredBox; }
 }
 
 export class SmallTrainBox extends TrainBox {

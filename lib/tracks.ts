@@ -1,6 +1,6 @@
-import { Vector, Segment } from "./maths";
-import { onMove, pos } from "./grid";
-import { ObjHeader, Obj } from "./objects"
+import { Vector, Segment, sign } from "./maths.js";
+import { onMove, pos } from "./grid.js";
+import { ObjHeader, Obj } from "./objects.js"
 
 const trackElement = $("#background-tracks");
 const ctx = (trackElement.get(0) as HTMLCanvasElement).getContext("2d");
@@ -59,7 +59,7 @@ export class Track {
   get length() { return this.segment.magnitude; }
 
   searchForTrack(distance: number): ObjHeader { // returns [finalTrack, residualDistance]
-    let dir = Math.sign(distance);
+    let dir = sign(distance);
     let skipFirstItt = dir < 0;
     distance = Math.abs(distance);
     let currentTrack: Track = this;

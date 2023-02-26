@@ -1,7 +1,9 @@
-import { Vector } from "./maths";
-import { Track } from "./tracks";
+import { Vector, sign } from "./maths.js";
+import { Track } from "./tracks.js";
 
-type Followers = FastFollower | FloatingFollower | Tracer;
+export type StrictFollowers = FastFollower | Tracer;
+export type Followers = StrictFollowers | FloatingFollower;
+export type Tickable = Followers | CenteredBox;
 export type ObjHeader = [track: Track, extra: number] | null;
 
 export class Obj {
@@ -76,7 +78,7 @@ export class Tracer extends Obj {
         }
       });
       if (toAdjust < 0 && this.h != null) {
-        this.h = this.h[0].searchForTrack(this.h[1] + (toAdjust * Math.sign(limitFollower.d)));
+        this.h = this.h[0].searchForTrack(this.h[1] + (toAdjust * sign(limitFollower.d)));
         if (this.r != this.h[0]) this.reRoot(this.h[0]);
         this.p = this.h[0].getPosAt(this.h[1]);
       }
@@ -93,11 +95,15 @@ export class Tracer extends Obj {
     return this.h[0].segment.direction;
   }
 
-  reRoot(newRoot) {
+  reRoot(newRoot: Track) {
     if (this.r) this.r.unRoot(this);
     this.r = newRoot;
     this.r.root(this);
   }
+
+  // these are solely to prevent TS errors
+  get leader() { return null; }
+  set leader(newLader) { return; }
 }
 
 export class DragTracer extends Tracer {
@@ -173,7 +179,7 @@ export class LocomotiveTracer extends AutoTracer {
   }
   accelerateTo(velocity, acc=0.1) {
     this.tAcc = velocity;
-    this.acc = Math.abs(acc) * Math.sign(this.tAcc - this.s);
+    this.acc = Math.abs(acc) * sign(this.tAcc - this.s);
   }
   get velocity() { return this.s; }
   
@@ -188,17 +194,23 @@ export class LocomotiveTracer extends AutoTracer {
   }
 }
 
+interface FastFollowerInterface {
+  leader: Followers
+  color?: string
+  distance?: number
+}
+
 export class FastFollower extends Obj {
-  public l: Tracer;
+  public l: Followers;
   public h: [track: Track, extra: number] | null;
   public d: number;
   public r: Track | null;
   public type: number;
   constructor({
+    leader,
     color="blue",
-    leader = new Tracer({}), // either Tracer or Follower
     distance = 20 // positive indicates ahead of leader, negative indicates behind follower
-  }) {
+  }: FastFollowerInterface) {
     super(new Vector({}), color);
     this.l = leader;
     this.h = null;
@@ -214,8 +226,8 @@ export class FastFollower extends Obj {
     this.p = this.h[0].getPosAt(this.h[1]);
     return (this.h[1] < 0) ? (this.d > 0 ? this.h[1] : this.h[1]) : 1;
   }
-  follow(obj) { this.l.follow(obj); }
-  unfollow(obj) { this.l.unfollow(obj); }
+  follow(obj: Followers) { this.l.follow(obj); }
+  unfollow(obj: Followers) { this.l.unfollow(obj); }
   set leader(leader) { this.l = leader; }
   get leader() { return this.l; }
 
@@ -224,7 +236,7 @@ export class FastFollower extends Obj {
     return this.h[0].segment.direction;
   }
 
-  reRoot(newRoot) {
+  reRoot(newRoot: Track) {
     if (this.r) this.r.unRoot(this);
     this.r = newRoot;
     this.r.root(this);
@@ -233,10 +245,10 @@ export class FastFollower extends Obj {
 
 export class SlowFollower extends FastFollower {
   constructor({
+    leader,
     color="darkgreen",
-    leader = new Tracer({}), // either Tracer or Follower
     distance = 20 // positive indicates ahead of leader, negative indicates behind follower
-  }) {
+  }: FastFollowerInterface) {
     super({ color, leader, distance });
   }
   tick() { // Array<Track>
@@ -248,13 +260,20 @@ export class SlowFollower extends FastFollower {
         let offDistance = Math.abs(this.d) - this.l.p.distanceFrom(this.p);
         if (Math.round(offDistance) == 0) { break; }
         offsetAdd += offDistance;
-        const code = super.tick(offsetAdd * Math.sign(this.d));
+        const code = super.tick(offsetAdd * sign(this.d));
         // don't try to reposition follower if cannot move further
         if (code < 0) return code / 2; // I literally have no clue why this `/ 2` needs to be here, but it works...
       }
     }
     return 1;
   }
+}
+
+interface FloatingFollowerInterface {
+  leaderA: Followers
+  leaderB: Followers
+  color?: string
+  weight?: number
 }
 
 export class FloatingFollower extends Obj {
@@ -267,7 +286,7 @@ export class FloatingFollower extends Obj {
     leaderA = new Tracer({}), // either tracer or follower
     leaderB = new Tracer({}), // either tracer or follower,
     weight = 0.5 // bias position towards/from either leader (in range [0,1])
-  }) {
+  }: FloatingFollowerInterface) {
     super(new Vector({}), color);
     this.l1 = leaderA; // l1/leaderA is the Object to follow
     this.l2 = leaderB;
@@ -308,6 +327,7 @@ export class FloatingFollower extends Obj {
   }
 
   get h() { return this.l1.h; }
+  set h(newHeader) { this.l1.h = newHeader; }
 }
 
 

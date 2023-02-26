@@ -2,17 +2,28 @@ import * as parts from "./trainParts.js";
 import * as obj from "./objects.js";
 import * as math from "./maths.js";
 import { pos } from "./grid.js";
-import { tracks, renderTracks, addObject } from "./tracks.js";
+import { tracks, renderTracks, addObject, Track } from "./tracks.js";
 
 const conatiner = $("#train-parts-container");
 const trainCars = [];
 
+interface RollingStockInterface {
+  box: parts.TrainBox
+  source: string
+  tracks: Track[]
+}
+
 export class RollingStock {
+  public box: parts.TrainBox;
+  public t: Track[];
+  public e: JQuery<HTMLImageElement>;
+  public cf: RollingStock; // coupler (forwards)
+  public cb: RollingStock; // coupler (backwards)
   constructor({
     box,
     source,
     tracks
-  }) {
+  }: RollingStockInterface) {
     this.box = box;
     this.t = tracks;
     this.e = $(`<img src=\"graphics/${source}\" class=\"trainParts trainDecks\" style=\"width:${box.o.b.x}px;height:${box.o.b.y}px\">`);
@@ -34,16 +45,16 @@ export class RollingStock {
     this.e.css("transform", `rotate(${this.box.o.r}rad)`);
   }
 
-  coupleTo(locomotive, distance=10) {
+  coupleTo(locomotive: RollingStock, distance=10) {
     if (distance < 0) { // negative distance indicates this car coupled in front (acting as locomotive)
       return locomotive.coupleTo(this, -distance);
     }
-    if (this.cf) { this.uncouple(true); }
+    if (this.cf) { this.uncouple(distance, true); }
     this.box.coupleTo(locomotive.box, distance);
     this.cf = locomotive;
     locomotive.cb = this;
   }
-  uncouple(direction=1) { // negative direction indicates to uncouple rear from front (this acting as locomotive)
+  uncouple(direction=1, _override=false) { // negative direction indicates to uncouple rear from front (this acting as locomotive)
     if (direction < 0) {
       if (!this.cb) return;
       this.cb.uncouple(-direction);
@@ -56,7 +67,19 @@ export class RollingStock {
   }
 }
 
+interface LocomotiveInterface {
+  tracks: Track[]
+  bounds?: math.Vector
+  truckInset?: number
+  truckMidpointWeight?: number
+  truckSpacing?: number
+  truckAxles?: number
+  source?: string
+}
+
 export class Locomotive extends RollingStock {
+  public r: Track; // root track
+  public l: obj.LocomotiveTracer;
   constructor({
     tracks,
     bounds=new math.Vector({ x:430,y:70 }), // x=width, y=length
@@ -65,10 +88,10 @@ export class Locomotive extends RollingStock {
     truckSpacing=40,
     truckAxles=2,
     source="locomotive.png"
-  }) {
+  }: LocomotiveInterface) {
     const loco = addObject(
       new obj.LocomotiveTracer({  })
-    );
+    ) as obj.LocomotiveTracer;
     super({
       box: (bounds.isZero()) ? 
         new parts.SmallTrainBox({
@@ -109,9 +132,9 @@ export class Locomotive extends RollingStock {
   setRoot() {
     if (this.box.h && this.box.h[0] != this.r && this.getVelocity() != 0) {
       if (this.getVelocity() > 0) {
-        this.box.frontTruck.getAxle(0).o.l += this.box.h[0].searchTrackFor(this.r);
+        this.l.l += this.box.h[0].searchTrackFor(this.r); // this.l[ocomotiveTracer].l[eaderProgress]
       }
-      else { this.box.frontTruck.getAxle(0).o.l += this.box.h[0].searchTrackFor(this.r); }
+      else { this.l.l += this.box.h[0].searchTrackFor(this.r); } // this.l[ocomotiveTracer].l[eaderProgress]
       this.r = this.box.h[0];
     }
   }
@@ -208,7 +231,19 @@ export class Car extends RollingStock {
   forceTick() { if (this.t.length > 0) super.tick(this.t[0]); }
 }
 
+interface FastLocomotiveInterface {
+  tracks: Track[]
+  keys?: Object
+  bounds?: math.Vector
+  truckInset?: number
+  truckMidpointWeight?: number
+  truckSpacing?: number
+  truckAxles?: number
+  source?: string
+}
+
 export class FastLocomotive extends Locomotive {
+  keys: Object;
   constructor({
     tracks,
     bounds=new math.Vector({ x:430,y:70 }), // x=width, y=length
@@ -222,7 +257,7 @@ export class FastLocomotive extends Locomotive {
       40: ["accelerateTo",-2,0.01],
       32:["uncouple", -1]
     }
-  }) {
+  }: FastLocomotiveInterface) {
     super({
       tracks,
       bounds,

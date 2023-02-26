@@ -1,8 +1,11 @@
-import * as grid from "./grid";
-import * as math from "./maths";
-import * as tracks from "./tracks";
-import * as parts from "./trainParts";
-import * as trains from "./trains";
+import * as grid from "./grid.js";
+import * as math from "./maths.js";
+import * as tracks from "./tracks.js";
+// import * as parts from "./trainParts.js";
+// import * as trains from "./trains.js";
+
+import "./trainParts.js";
+import "./trains.js";
 
 var points = []
 
@@ -81,9 +84,9 @@ document.body.addEventListener("click", () => {
 tracks.appendTrack(bridge)
 tracks.addTracks([out1, out2])
 
-setInterval(() => {
-  console.log(bridge.c.length)
-}, 100);
+// setInterval(() => {
+//   console.log(bridge.c.length)
+// }, 100);
 
 
 // const switchTrack = new tracks.OutSwitchTrack({

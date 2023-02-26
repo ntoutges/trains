@@ -1,10 +1,12 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-var grid = require("./grid");
-var math = require("./maths");
-var tracks = require("./tracks");
+import * as grid from "./grid.js";
+import * as math from "./maths.js";
+import * as tracks from "./tracks.js";
+// import * as parts from "./trainParts.js";
+// import * as trains from "./trains.js";
+import "./trainParts.js";
+import "./trains.js";
 var points = [];
-document.body.addEventListener("mousedown", function (e) {
+document.body.addEventListener("mousedown", (e) => {
     if (e.button == 1) {
         grid.setDraggable(!grid.getDraggable());
         e.preventDefault();
@@ -12,13 +14,13 @@ document.body.addEventListener("mousedown", function (e) {
     else if (e.button == 0)
         grid.dragging.startDrag(e.pageX, e.pageY);
     else if (e.button == 2) {
-        var v = new math.Vector({ x: e.pageX - grid.pos.x, y: -e.pageY + grid.pos.y });
+        const v = new math.Vector({ x: e.pageX - grid.pos.x, y: -e.pageY + grid.pos.y });
         tracks.appendPoint(v);
     }
 });
-document.body.addEventListener("mouseup", function (e) { grid.dragging.stopDrag(e.pageX, e.pageY); });
-document.body.addEventListener("mousemove", function (e) { grid.dragging.doDrag(e.pageX, e.pageY); });
-document.body.oncontextmenu = function (e) { e.preventDefault(); };
+document.body.addEventListener("mouseup", (e) => { grid.dragging.stopDrag(e.pageX, e.pageY); });
+document.body.addEventListener("mousemove", (e) => { grid.dragging.doDrag(e.pageX, e.pageY); });
+document.body.oncontextmenu = (e) => { e.preventDefault(); };
 tracks.addTracks(tracks.generateTracks(math.generateVectorList([
     [0, 0],
     [250, 0],
@@ -30,7 +32,7 @@ tracks.addTracks(tracks.generateTracks(math.generateVectorList([
     [1250, 750],
     // [2500,750]
 ])));
-var out1 = new tracks.Track({
+const out1 = new tracks.Track({
     segment: new math.Segment({
         vector: new math.Vector({
             x: 1500,
@@ -42,7 +44,7 @@ var out1 = new tracks.Track({
         })
     })
 });
-var out2 = new tracks.Track({
+const out2 = new tracks.Track({
     segment: new math.Segment({
         vector: new math.Vector({
             x: 1500,
@@ -54,12 +56,12 @@ var out2 = new tracks.Track({
         })
     })
 });
-var bridge = new tracks.BridgeTrack({
+const bridge = new tracks.BridgeTrack({
     outTrackA: out1,
     outTrackB: out2
 });
 var state = true;
-document.body.addEventListener("click", function () {
+document.body.addEventListener("click", () => {
     state = !state;
     if (!bridge.switchOutTrackState(state)) {
         state = !state; // undo if not switched
@@ -67,9 +69,9 @@ document.body.addEventListener("click", function () {
 });
 tracks.appendTrack(bridge);
 tracks.addTracks([out1, out2]);
-setInterval(function () {
-    console.log(bridge.c.length);
-}, 100);
+// setInterval(() => {
+//   console.log(bridge.c.length)
+// }, 100);
 // const switchTrack = new tracks.OutSwitchTrack({
 //   inTrack: tracks.tracks[tracks.tracks.length-1],
 //   segmentA: new math.Segment({
