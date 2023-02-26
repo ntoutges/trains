@@ -276,48 +276,11 @@ export class FastLocomotive extends Locomotive {
     document.body.addEventListener("keyup", (e) => { this.onKeyUp(e.keyCode); });
   }
 
-  onKeyDown(keyCode) { if (keyCode in this.keys) this[this.keys[keyCode][0]].apply(this, this.keys[keyCode].slice(1)); }
-  onKeyUp(keyCode) { if (keyCode in this.keys && this.keys[keyCode][0] == "accelerateTo") { this[this.keys[0][0]].apply(this, this.keys[0].slice(1)); } }
+  onKeyDown(keyCode: number) { if (keyCode in this.keys) this[this.keys[keyCode][0]].apply(this, this.keys[keyCode].slice(1)); }
+  onKeyUp(keyCode: number) { if (keyCode in this.keys && this.keys[keyCode][0] == "accelerateTo") { this[this.keys[0][0]].apply(this, this.keys[0].slice(1)); } }
 }
 
-const loco = new FastLocomotive({
-  tracks,
-  keys: {
-    0: ["accelerateTo", 0, 0.01],
-    38: ["accelerateTo", 4,0.01],
-    40: ["accelerateTo",-4,0.01],
-    32:["uncouple", -1]
-  }
-});
-
-
-const car1 = new Car({
-  locomotive: loco,
-  tracks
-})
-
-const car2 = new Car({
-  locomotive: car1,
-  tracks
-})
-
-new Car({
-  locomotive: car2,
-  tracks
-})
-
-setInterval(() => {
-  trainCars.forEach((trainCar) => {
-    trainCar.tick();
-    trainCar.render();
-  });
-  renderTracks();
-  // parts.tick();
-}, 10);
-
-setTimeout(() => {
-  trainCars.forEach((trainCar) => {
-    trainCar.forceTick();
-    trainCar.render();
-  });
-}, 100);
+export function tickTrains(doRender:boolean = false) {
+  trainCars.forEach((trainCar) => { trainCar.tick(); });
+  if (doRender) { trainCars.forEach((trainCar) => { trainCar.render(); }); }
+}

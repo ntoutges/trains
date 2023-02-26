@@ -255,7 +255,7 @@ export class TrainBox extends TrainParts {
       object: tracks.addObject(
         new obj.SlowFollower({
           leader,
-          distance: 20
+          distance: (truckAxles-1) * truckSpacing * truckMidpointWeight
         })
       ),
       axles: truckAxles,

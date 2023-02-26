@@ -2,12 +2,8 @@ import * as grid from "./grid.js";
 import * as math from "./maths.js";
 import * as tracks from "./tracks.js";
 // import * as parts from "./trainParts.js";
-// import * as trains from "./trains.js";
-
-import "./trainParts.js";
-import "./trains.js";
-
-var points = []
+import * as trains from "./trains.js";
+import { TrackNetwork, TrackSystem } from "./metaTracks.js";
 
 document.body.addEventListener("mousedown", (e) => {
 
@@ -26,21 +22,21 @@ document.body.addEventListener("mousemove", (e) => { grid.dragging.doDrag(e.page
 
 document.body.oncontextmenu = (e) => { e.preventDefault(); }
 
-tracks.addTracks(
-  tracks.generateTracks(
-    math.generateVectorList([
-      [0,0],
-      [250,0],
-      [500,250],
-      [500,750],
-      [750,1000],
-      [1000,1000],
-      // [1000,1000],
-      [1250, 750],
-      // [2500,750]
-    ])
-  )
-)
+// tracks.addTracks(
+//   tracks.generateTracks(
+//     math.generateVectorList([
+//       [0,0],
+//       [250,0],
+//       [500,250],
+//       [500,750],
+//       [750,1000],
+//       [1000,1000],
+//       // [1000,1000],
+//       [1250, 750],
+//       // [2500,750]
+//     ])
+//   )
+// )
 
 const out1 = new tracks.Track({
   segment: new math.Segment({
@@ -59,7 +55,20 @@ const out2 = new tracks.Track({
   segment: new math.Segment({
     vector: new math.Vector({
       x: 1500,
-      y: 500
+      y: 650
+    }),
+    offVector: new math.Vector({
+      x: 2000,
+      y: 0
+    })
+  })
+})
+
+const in1 = new tracks.Track({
+  segment: new math.Segment({
+    vector: new math.Vector({
+      x: 750,
+      y: 600
     }),
     offVector: new math.Vector({
       x: 500,
@@ -68,51 +77,88 @@ const out2 = new tracks.Track({
   })
 })
 
-const bridge = new tracks.BridgeTrack({
-  outTrackA: out1,
-  outTrackB: out2
+// const bridge = new tracks.BridgeTrack({
+//   inTracks: [tracks.tracks[tracks.tracks.length-1], in1],
+//   outTracks: [out1, out2]
+// });
+
+// tracks.addTracks([bridge])
+// tracks.addTracks([out1, out2, in1])
+
+const loco = new trains.FastLocomotive({
+  tracks: tracks.tracks,
+  keys: {
+    0: ["accelerateTo", 0, 0.1],
+    38: ["accelerateTo", 4,0.1],
+    40: ["accelerateTo",-4,0.1],
+    32:["uncouple", -1]
+  }
 });
 
-var state = true;
-document.body.addEventListener("click", () => {
-  state = !state
-  if (!bridge.switchOutTrackState(state)) {
-    console.log("Unswitched")
-    state = !state; // undo if not switched
+
+const car1 = new trains.Car({
+  locomotive: loco,
+  tracks
+})
+
+const car2 = new trains.Car({
+  locomotive: car1,
+  tracks
+})
+
+// new trains.Car({
+//   locomotive: car2,
+//   tracks
+// })
+
+setInterval(() => {
+  trains.tickTrains(true);
+  tracks.renderTracks();
+}, 10);
+
+
+const system = new TrackSystem({
+  networks: {
+    "A": new TrackNetwork(
+      math.generateVectorList([
+        [0,1200],
+        [1000,1000]
+      ])
+    ),
+    "B": new TrackNetwork(
+      math.generateVectorList([
+        [0,0],
+        [1000,200]
+      ])
+    ),
+    "C": new TrackNetwork(
+      math.generateVectorList([
+        [2000,1000],
+        [3000,1200]
+      ])
+    ),
+    "D": new TrackNetwork(
+      math.generateVectorList([
+        [2000,200],
+        [3000,0]
+      ])
+    ),
+    "E": new TrackNetwork(
+      math.generateVectorList([
+        [0,600],
+        [1000,600]
+      ])
+    )
+  },
+  switches: {
+    "A": ["C"],
+    "B": ["D"],
+    "E": ["C", "D"]
   }
 })
 
-tracks.appendTrack(bridge)
-tracks.addTracks([out1, out2])
+tracks.addTracks(system.tracks);
 
-setInterval(() => {
-  console.log(bridge.c.length)
-}, 100);
-
-
-// const switchTrack = new tracks.OutSwitchTrack({
-//   inTrack: tracks.tracks[tracks.tracks.length-1],
-//   segmentA: new math.Segment({
-//     vector: new math.Vector({
-//       x: 1010+500,
-//       y: 740
-//     }),
-//     offVector: new math.Vector({
-//       x: 500,
-//       y: 0
-//     })
-//   }),
-//   segmentB: new math.Segment({
-//     vector: new math.Vector({
-//       x: 1010+500,
-//       y: 740
-//     }),
-//     offVector: new math.Vector({
-//       x: 500,
-//       y: 100
-//     })
-//   })
-// })
-// tracks.tracks[tracks.tracks.length-1].outTrack = switchTrack;
-
-// tracks.addTracks([ switchTrack ])
+document.body.addEventListener("click", () => {
+  system.getBridgeFrom("A").switchNext();
+})

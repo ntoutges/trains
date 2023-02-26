@@ -113,50 +113,83 @@ export class Track {
   }
 }
 
-export class BridgeTrack extends Track {
-  private itA: boolean; // in track A enabled
-  private otA: boolean; // out track A enabled
-  constructor({
-    inTrackA=null,
-    inTrackB=null,
-    outTrackA=null,
-    outTrackB=null
-  }) {
-    super({});
-    this.t = [inTrackA, outTrackA, inTrackB, outTrackB];
-    this.itA = true; // [i]n [t]rack [A]
-    this.otA = true; // [o]ut [t]rack [B]
+interface BridgeTrackInterface {
+  inTracks: Track[]
+  outTracks: Track[]
+}
 
-    this.switchInTrackState(false);
-    this.switchOutTrackState(true);
+export class BridgeTrack extends Track {
+  private itI: number; // in track index
+  private otI: number; // out track index
+  private tt: number; // track transition -- first index where [this.t] returns an outTrack 
+  constructor({
+    inTracks = [],
+    outTracks = []
+  }: BridgeTrackInterface) {
+    if (inTracks.length == 0) throw new Error("Must have at least one inTrack");
+    if (outTracks.length == 0) throw new Error("Must have at least one outTrack");
+
+    super({});
+    this.t = [].concat(inTracks, outTracks);
+    this.itI = -1; // [i]n [t]rack [I]ndex
+    this.otI = -1; // [o]ut [t]racks [I]ndex
+    this.tt = inTracks.length;
+    this.switchInTrackState(0);
+    this.switchOutTrackState(0);
   }
 
-  get inTrack() { return this.t[this.itA ? 0 : 2]; }
-  get outTrack() { return this.t[this.otA ? 1 : 3]; }
+  get inTrack() {
+    return this.t[this.itI];
+  }
+  get outTrack() {
+    return this.t[this.tt + this.otI];
+  }
   set inTrack(track) {
-    this.t[this.itA ? 0 : 2] = track;
+    this.t[this.itI] = track;
     this.updateSegment();
   }
   set outTrack(track) {
-    this.t[this.otA ? 1 : 3] = track;
+    this.t[this.tt + this.otI] = track;
     this.updateSegment();
   }
 
-  switchInTrackState(state) {
+  switchInTrackState(index: number) {
+    const newItI = Math.max(Math.min(index, this.tt-1), 0);
+    if (newItI == this.itI) return true; // no use repeating old action, but technically switched properly
     if (this.c.length != 0) return false; // unable to switch -- train in the way
-    this.itA = state;
-    if (this.t[0]) this.t[0].outTrack = state ? this : null;
-    if (this.t[2]) this.t[2].outTrack = state ? null : this;
+    
+    if (this.itI != -1) this.t[this.itI].outTrack = null;
+    this.t[newItI].outTrack = this;
+    this.itI = newItI;
+
     this.updateSegment();
     return true; // switched properly
   }
-  switchOutTrackState(state: boolean) {
+  switchOutTrackState(index: number) {
+    const newOtI = Math.max(Math.min(index, this.t.length - this.tt - 1), 0);
+    if (newOtI == this.otI) return true; // no use repeating old action, but technically switched properly
     if (this.c.length != 0) return false; // unable to switch -- train in the way
-    this.otA = state;
-    if (this.t[1]) this.t[1].inTrack = state ? this : null;
-    if (this.t[3]) this.t[3].inTrack = state ? null : this;
+    
+    if (this.otI != -1) this.t[this.otI + this.tt].inTrack = null;
+    this.t[newOtI + this.tt].inTrack = this;
+
+    this.otI = newOtI;
     this.updateSegment();
     return true; // switched properly
+  }
+
+  // go to next possible switch configuration
+  switchNext() {
+    const oldItI = this.itI;
+    this.switchInTrackState(this.itI + 1);
+    if (oldItI == this.itI) { // if nothing happened, reset and increment next
+      this.switchInTrackState(0);
+      const oldOtI = this.otI;
+      this.switchOutTrackState(this.otI + 1);
+      if (oldOtI == this.otI) { // if nothing happened, reset
+        this.switchOutTrackState(0);
+      }
+    }
   }
 
   updateSegment() {
@@ -250,34 +283,6 @@ export function removeObject(obj: Obj) {
   if (index != -1) objects.splice(index, 1);
   return obj;
 }
-
-// contains no switches
-// export class TrackNetwork {
-//   constructor(vectors) { // Array<Vector>
-//     this.t = [];
-//     for (let i = 0; i < vectors.length-1; i++) {
-//       this.t.push(
-//         new Track({
-//           segment: new Segment({
-//             vector: vectors[i],
-//             offVector: vectors[i+1].add(vectors[i].scale(-1))
-//           }),
-//           inTrack: (i == 0) ? null : this.t[i-1] // track leading into this track is previous track
-//         })
-//       )
-//       if (i != 0) this.t[i-1].outTrack = this.t[i]; // last track leads into this track
-//     };
-//   }
-// }
-
-// export class TrackSystem {
-//   constructor({
-//     networks,
-//     switches
-//   }) {
-
-//   }
-// }
 
 var mouse = new Vector({});
 export var closestTrackData = null;
