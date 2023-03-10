@@ -3,7 +3,7 @@ import * as math from "./maths.js";
 import * as tracks from "./tracks.js";
 // import * as parts from "./trainParts.js";
 import * as trains from "./trains.js";
-import { TrackNetwork, TrackSystem } from "./metaTracks.js";
+import { generateNetworks, TrackNetwork, TrackSystem } from "./metaTracks.js";
 import { activeConsist, Consist } from "./consist.js";
 import { Options } from "./consistLookup.js";
 import { HeadTracer } from "./objects.js";
@@ -130,9 +130,9 @@ var consist = new Consist({
   tracks: tracks.tracks
 });
 
-setTimeout(() => {
-  consist.splitAt(1);
-}, 2000)
+// setTimeout(() => {
+//   consist.splitAt(1);
+// }, 2000)
 
 document.addEventListener("keydown", (e) => {
   if (e.keyCode == 38) activeConsist.accelerateTo(5);
@@ -149,38 +149,28 @@ setInterval(() => {
 }, 10);
 
 const system = new TrackSystem({
-  networks: {
-    "A": new TrackNetwork(
-      math.generateVectorList([
-        [0,1200],
-        [1000,1000]
-      ])
-    ),
-    "B": new TrackNetwork(
-      math.generateVectorList([
-        [0,0],
-        [1000,200]
-      ])
-    ),
-    "C": new TrackNetwork(
-      math.generateVectorList([
-        [2000,1000],
-        [3000,1200]
-      ])
-    ),
-    "D": new TrackNetwork(
-      math.generateVectorList([
-        [2000,200],
-        [3000,0]
-      ])
-    ),
-    "E": new TrackNetwork(
-      math.generateVectorList([
-        [0,600],
-        [1000,600]
-      ])
-    )
-  },
+  networks: generateNetworks({
+    "A": [
+      [0, 1200],
+      [1000,1000]
+    ],
+    "B": [
+      [0,0],
+      [1000,200]
+    ],
+    "C": [
+      [2000,1000],
+      [3000,1200]
+    ],
+    "D": [
+      [2000,200],
+      [3000,0]
+    ],
+    "E": [
+      [0,600],
+      [1000,600]
+    ]
+  }),
   switches: {
     "A": ["C"],
     "B": ["D"],
@@ -188,25 +178,25 @@ const system = new TrackSystem({
   }
 })
 
-const ringTracks = tracks.generateRingTracks({
-  origin: new math.Vector({
-    x: 100,
-    y: 100
-  }),
-  inAngles: [ 0,10,20,30,40,50,60,70,80,90 ],
-  radius: 500
-})
+// const ringTracks = tracks.generateRingTracks({
+//   origin: new math.Vector({
+//     x: 100,
+//     y: 100
+//   }),
+//   inAngles: [ 0,10,20,30,40,50,60,70,80,90 ],
+//   radius: 500
+// })
 
-const radial = new tracks.RadialSwitch({
-  ring: ringTracks 
-})
+// const radial = new tracks.RadialSwitch({
+//   ring: ringTracks 
+// })
 
 tracks.addTracks(system.tracks);
-tracks.appendTrack(ringTracks[0])
-tracks.addTracks(ringTracks.slice(1))
-tracks.addTracks([radial])
+// tracks.appendTrack(ringTracks[0])
+// tracks.addTracks(ringTracks.slice(1))
+// tracks.addTracks([radial])
 
 document.body.addEventListener("click", () => {
   system.getBridgeFrom("A").switchNext();
-  radial.switchNext();
+  // radial.switchNext();
 })

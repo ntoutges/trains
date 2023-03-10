@@ -1,4 +1,4 @@
-import { Segment, Vector } from "./maths.js";
+import { generateVectorList, Segment, Vector } from "./maths.js";
 import { Track, BridgeTrack } from "./tracks.js";
 
 // contains no switches
@@ -132,4 +132,16 @@ export class TrackSystem {
   getBridgeFrom(networkId: string): BridgeTrack {
     return (networkId in this.m) ? this.b[this.m[networkId]] : null;
   }
+}
+
+export function generateNetworks(networkDatas: Record<string, Array<[x: number, y:number]>>) {
+  const networks: Record<string, TrackNetwork> = {};
+  for (let netId in networkDatas) {
+    networks[netId] = new TrackNetwork(
+      generateVectorList(
+        networkDatas[netId]
+      )
+    )
+  }
+  return networks;
 }

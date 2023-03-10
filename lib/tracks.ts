@@ -186,8 +186,9 @@ export class BridgeTrack extends Track {
     return true; // switched properly
   }
   get canSwitch() {
-    // return this.lCt == this.fCt;
-    return this.c.length == 0;
+    // both start and end points off the track (consist not straddling), and no trains tracers directly on track
+    return (this.lCt + this.fCt) % 2 == 0 && this.c.length == 0;
+    // return this.c.length == 0;
   }
 
   // go to next possible switch configuration
