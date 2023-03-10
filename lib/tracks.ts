@@ -127,9 +127,9 @@ interface BridgeTrackInterface {
 }
 
 export class BridgeTrack extends Track {
-  private itI: number; // in track index
-  private otI: number; // out track index
-  private tt: number; // track transition -- first index where [this.t] returns an outTrack 
+  public itI: number; // in track index
+  public otI: number; // out track index
+  public readonly tt: number; // track transition -- first index where [this.t] returns an outTrack 
   constructor({
     inTracks = [],
     outTracks = []
@@ -224,7 +224,44 @@ export class BridgeTrack extends Track {
   }
 }
 
-export function generateTracks(vectors) { // Array<Vector>
+interface RadialSwitchInterface {
+  ring: Track[]
+};
+
+export class RadialSwitch extends BridgeTrack {
+  constructor({
+    ring
+  }: RadialSwitchInterface) {
+    if (ring.length % 2 != 0) throw new Error("Non-(2n%2=0) amount of tracks in ring")
+    
+    // assumes inTracks in firstHalf, outTracks in second half of array
+    const inTracks = ring.slice(0, ring.length/2);
+    const outTracks = ring.slice(ring.length/2);
+    
+    super({
+      inTracks,
+      outTracks
+    });
+  }
+  
+  switchNext() {
+    this.switchInTrackState((this.itI+1) % this.tt);
+    this.switchOutTrackState(this.itI); // keep [itI] in sync with [otI]; [itI] already incremented from previous step
+  }
+
+  get canSwitch() {
+    return this.fCt == this.lCt;
+  }
+}
+
+interface RingInterface {
+  origin: Vector
+  inAngles?: number[]
+  outAngles?: number[]
+  radius?: number
+}
+
+export function generateTracks(vectors: Vector[]) { // Array<Vector>
   let tempTracks = [];
   for (let i = 0; i < vectors.length-1; i++) {
     tempTracks.push(
@@ -239,6 +276,55 @@ export function generateTracks(vectors) { // Array<Vector>
     if (i != 0) tempTracks[i-1].outTrack = tempTracks[i]; // last track leads into this track
   };
   return tempTracks;
+}
+
+export function generateRingTracks({
+  origin,
+  inAngles = [],
+  outAngles = [],
+  radius = 100
+}: RingInterface) {
+  if (inAngles.length == 0 && outAngles.length == 0) throw new Error("Empty angles array");
+  if (radius < 100) throw new Error("Radius too small");
+
+  const angles = [].concat(inAngles, outAngles.map((x) => (x + 180) % 360)).sort();
+
+  const inTracks: Track[] = [];
+  const outTracks: Track[] = [];
+  for (const angle of angles) {
+    const rads = angle * Math.PI / 180;
+    const rootPoint = new Vector({
+      x: (radius-5) * Math.cos(rads),
+      y: (radius-5) * Math.sin(rads)
+    })
+    const offset = new Vector({
+      x: -5 * Math.cos(rads),
+      y: -5 * Math.sin(rads)
+    });
+
+    inTracks.push(
+      new Track({
+        inTrack: null,
+        outTrack: null,
+        segment: new Segment({
+          vector: rootPoint.add(origin),
+          offVector: offset
+        })
+      })
+    );
+    outTracks.push(
+      new Track({
+        inTrack: null,
+        outTrack: null,
+        segment: new Segment({ // always directly across
+          vector: rootPoint.scale(-1).add(origin),
+          offVector: offset.scale(-1)
+        })
+      })
+    );
+  }
+
+  return [].concat(inTracks, outTracks);
 }
 
 export function addTracks(newTracks: Track[]) { // Array<Track>

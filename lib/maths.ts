@@ -42,6 +42,8 @@ export class Vector {
 
   distanceFrom(vector: Vector) { return Math.sqrt(Math.pow(this.x-vector.x,2) + Math.pow(this.y-vector.y,2)); }
   directionFrom(vector: Vector) { return this.direction - vector.direction; }
+  
+  toString() { return `[${Math.round(this.x)},${Math.round(this.y)}]` }
 }
 
 export class Segment {

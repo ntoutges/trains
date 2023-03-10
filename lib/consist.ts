@@ -35,7 +35,6 @@ export class Consist {
     sequence,
     tracks
   }: ConsistInterface) {
-    console.clear()
     this.tr = tracks;
     if (sequence.length == 0) throw new Error("Empty consist");
 

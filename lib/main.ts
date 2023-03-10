@@ -188,8 +188,25 @@ const system = new TrackSystem({
   }
 })
 
+const ringTracks = tracks.generateRingTracks({
+  origin: new math.Vector({
+    x: 100,
+    y: 100
+  }),
+  inAngles: [ 0,10,20,30,40,50,60,70,80,90 ],
+  radius: 500
+})
+
+const radial = new tracks.RadialSwitch({
+  ring: ringTracks 
+})
+
 tracks.addTracks(system.tracks);
+tracks.appendTrack(ringTracks[0])
+tracks.addTracks(ringTracks.slice(1))
+tracks.addTracks([radial])
 
 document.body.addEventListener("click", () => {
   system.getBridgeFrom("A").switchNext();
+  radial.switchNext();
 })
