@@ -71,6 +71,30 @@ export class Segment {
   }
 }
 
+interface MassInterface {
+  dryMass?: number,
+  loadMass?: number
+}
+
+export class Mass {
+  private readonly dM: number;
+  private lM: number;
+  constructor({
+    dryMass=1,
+    loadMass=0
+  }: MassInterface) {
+    if (dryMass <= 0) throw new Error("Dry mass must be greater than 0");
+    if (loadMass < 0) throw new Error("Load mass cannot be less than 0");
+    this.dM = dryMass;
+    this.lM = loadMass;
+  }
+
+  get dryMass() { return this.dM; }
+  get wetMass() { return this.dM + this.lM; }
+  get loadMass() { return this.lM; }
+  set loadMass(newMass) { this.lM = newMass; }
+}
+
 export function generateVectorList(points: Array<[x: number, y:number]>): Array<Vector> {
   const vectors = [];
   points.forEach((pair) => {

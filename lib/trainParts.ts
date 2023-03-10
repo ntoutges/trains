@@ -21,7 +21,6 @@ export class TrainPart {
   public s: string;
   public b: Vector;
   public e: JQuery<HTMLImageElement>;
-  private oZ: number;
   constructor({
     source="missing.png",
     object,
@@ -30,10 +29,12 @@ export class TrainPart {
     this.o = object;
     this.s = source;
     this.b = size;
-    this.e = $(`<img src=\"graphics/${source}\" class=\"trainParts\" style=\"width:${size.x}px;height:${size.y}px;\"></img>`);
+    this.e = $(`<img src=\"graphics/${source}\" class=\"trainParts\" style=\"width:${size.x}px;height:${size.y}px;\" draggable=\"false\">`);
     conatiner.append(this.e);
 
     trainParts.push(this);
+
+    this.updateImageSize();
   }
   tick(...params) {
     switch (this.o.type) {
@@ -41,7 +42,7 @@ export class TrainPart {
         this.o.tick();
         break;
       case 1: // tick needs origin track
-        (this.o as obj.LocomotiveTracer).tickO.apply(this.o, params);
+        (this.o as obj.HeadTracer).tickO.apply(this.o, params);
         break;
       case 2: // tick needs closest track
         if (tracks.closestTrackData) (this.o as obj.DragTracer).tickC.apply(this.o, params);
@@ -153,19 +154,21 @@ export class TrainAxle extends TrainPart {
     this.f2 = followers;
   }
 
-  uncouple() {
+  uncouple(tracer: obj.AutoTracer=null) {
     if (this.f2 == null) return;
 
     const followers = this.f2;
     this.f2 = null;
 
     const oldObject = tracks.removeObject(this.o) as obj.Followers;
-    this.o = tracks.addObject(
+    // const oldObject = this.o;
+    this.o = (tracer) ? tracer : tracks.addObject(
       new obj.AutoTracer({ step: 1 })
     ) as obj.AutoTracer;
     this.o.h = oldObject.h;
     this.o.p = oldObject.p;
-    
+    this.o.data = oldObject.data;
+
     for (const follower of followers) {
       if (follower.leader == oldObject) follower.leader = this.o;
       oldObject.unfollow(follower);
@@ -235,7 +238,7 @@ export class TrainTruck extends TrainParts {
 
   // back coupler couples/uncouples from front coupler
   coupleTo(truck, distance=100) { this.getAxle(0).coupleTo(truck.getAxle(truck.p.length-1), distance); }
-  uncouple() { this.getAxle(0).uncouple(); }
+  uncouple(tracer: obj.AutoTracer=null) { this.getAxle(0).uncouple(tracer); }
 }
 
 export class TrainBox extends TrainParts {
@@ -285,6 +288,9 @@ export class TrainBox extends TrainParts {
     });
 
     this.i = truckInset - ((truckAxles-1) * truckSpacing) * (1-truckMidpointWeight);
+    // this works on a per-car basis, but not consist-wide
+    // this.frontTruck.getAxle(0).o.data = "l"; // leader of the train car
+    // this.backTruck.getAxle(0).o.data = "f"; // follower of the train car
   }
 
   get frontTruck() { return this.p[0] as unknown as TrainTruck; }
@@ -295,8 +301,8 @@ export class TrainBox extends TrainParts {
   set h(newH) { this.frontTruck.getAxle(0).o.h = newH; }
 
   // back coupler couples/uncouples from front coupler
-  coupleTo(box, couplerLength=10) { this.frontTruck.coupleTo(box.backTruck, this.i + box.i + couplerLength); }
-  uncouple() { this.frontTruck.uncouple(); }
+  coupleTo(box: TrainBox, couplerLength=10) { this.frontTruck.coupleTo(box.backTruck, this.i + box.i + couplerLength); }
+  uncouple(tracer: obj.AutoTracer=null) { this.frontTruck.uncouple(tracer); }
 
   get o() { return super.o as obj.CenteredBox; }
 }

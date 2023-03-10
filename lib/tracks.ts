@@ -39,6 +39,8 @@ export class Track {
   public s: Segment;
   public t: Track[];
   public c: Obj[];
+  public lCt: number; // amount of leaders on the track
+  public fCt: number; // amount of followers on the track
   constructor({
     segment = new Segment({}),
     inTrack = null, // instance of Track
@@ -47,6 +49,8 @@ export class Track {
     this.s = segment;
     this.t = [inTrack, outTrack]; // [in,out]
     this.c = []; // [c]hild trains (trains which have this set as their root)
+    this.lCt = 0;
+    this.fCt = 0;
   }
 
   get segment() { return this.s; }
@@ -105,11 +109,15 @@ export class Track {
 
   root(train: Obj) {
     this.c.push(train);
+    if (train.data == "l") this.lCt++; // the front of a train car has entered the track (leader)
+    else if (train.data == "f") this.fCt++; // the back of a train car has entered the track (follower)
   }
   unRoot(train: Obj) {
     const index = this.c.indexOf(train);
     if (index == -1) return;
     this.c.splice(index, 1);
+    if (train.data == "l") this.lCt-- // the front of a train car has exited the track (leader)
+    else if (train.data == "f") this.fCt-- // the back of a train car has exited the track (follower)
   }
 }
 
@@ -156,7 +164,7 @@ export class BridgeTrack extends Track {
   switchInTrackState(index: number) {
     const newItI = Math.max(Math.min(index, this.tt-1), 0);
     if (newItI == this.itI) return true; // no use repeating old action, but technically switched properly
-    if (this.c.length != 0) return false; // unable to switch -- train in the way
+    if (!this.canSwitch) return false; // unable to switch -- train in the way
     
     if (this.itI != -1) this.t[this.itI].outTrack = null;
     this.t[newItI].outTrack = this;
@@ -168,7 +176,7 @@ export class BridgeTrack extends Track {
   switchOutTrackState(index: number) {
     const newOtI = Math.max(Math.min(index, this.t.length - this.tt - 1), 0);
     if (newOtI == this.otI) return true; // no use repeating old action, but technically switched properly
-    if (this.c.length != 0) return false; // unable to switch -- train in the way
+    if (!this.canSwitch) return false; // unable to switch -- train in the way
     
     if (this.otI != -1) this.t[this.otI + this.tt].inTrack = null;
     this.t[newOtI + this.tt].inTrack = this;
@@ -176,6 +184,10 @@ export class BridgeTrack extends Track {
     this.otI = newOtI;
     this.updateSegment();
     return true; // switched properly
+  }
+  get canSwitch() {
+    // return this.lCt == this.fCt;
+    return this.c.length == 0;
   }
 
   // go to next possible switch configuration
@@ -211,7 +223,6 @@ export class BridgeTrack extends Track {
     });
   }
 }
-
 
 export function generateTracks(vectors) { // Array<Vector>
   let tempTracks = [];

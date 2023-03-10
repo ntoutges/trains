@@ -63,7 +63,7 @@ export const dragging = {
     // if (!offPos.v) return draggable;
 
     const oldZoom = pos.a;
-    pos.a *= ZOOM_POWER ** Math.sign(direction);
+    pos.a *= ZOOM_POWER ** -Math.sign(direction);
     const oldV = offPos.v;
     dragging.doDrag(
       offPos.x / oldZoom,
@@ -108,7 +108,7 @@ export async function drawGridAt(x:number, y:number) {
     gridLevel++;
     rawGridSize = gridSize * metaGridSize**gridLevel;
   }
-  else if (rawGridSize/pos.a > gridSize*metaGridSize) {
+  else if (rawGridSize/pos.a >= gridSize*metaGridSize) {
     gridLevel--;
     rawGridSize = gridSize * metaGridSize**gridLevel;
   }
@@ -130,7 +130,7 @@ export async function drawGridAt(x:number, y:number) {
   drawOrigin(x,y);
 }
 
-export function drawMetaGridAt(x,y) {
+export function drawMetaGridAt(x: number,y: number) {
   const startX = x % (rawGridSize*metaGridSize);
   const startY = y % (rawGridSize*metaGridSize);
 
@@ -147,7 +147,7 @@ export function drawMetaGridAt(x,y) {
 
 export function drawOrigin(x: number,y: number) {
   // unable to see origin, so no need to render
-  if ((x > gridWidth || x < 0) && (y > gridHeight || y < 0)) return;
+  if ((x/pos.a > gridWidth || x < 0) && (y/pos.a > gridHeight || y < 0)) return;
 
   ctx.beginPath();
   ctx.strokeStyle = originColor;

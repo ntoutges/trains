@@ -4,8 +4,9 @@ import * as tracks from "./tracks.js";
 // import * as parts from "./trainParts.js";
 import * as trains from "./trains.js";
 import { TrackNetwork, TrackSystem } from "./metaTracks.js";
-import { Consist } from "./consist.js";
+import { activeConsist, Consist } from "./consist.js";
 import { Options } from "./consistLookup.js";
+import { HeadTracer } from "./objects.js";
 
 document.body.addEventListener("mousedown", (e) => {
 
@@ -21,10 +22,14 @@ document.body.addEventListener("mousedown", (e) => {
 });
 document.body.addEventListener("mouseup", (e) => { grid.dragging.stopDrag(e.pageX, e.pageY); });
 document.body.addEventListener("mousemove", (e) => { grid.dragging.doDrag(e.pageX, e.pageY); });
+
 document.body.addEventListener("keydown", (e) => {
-  if (e.keyCode == 187) grid.dragging.doZoom(-1);
-  else if (e.keyCode == 189) grid.dragging.doZoom(1);
+  if (e.keyCode == 187) grid.dragging.doZoom(1);
+  else if (e.keyCode == 189) grid.dragging.doZoom(-1);
 });
+document.addEventListener("wheel", (e) => {
+  grid.dragging.doZoom(-e.deltaY);
+})
 
 document.body.oncontextmenu = (e) => { e.preventDefault(); }
 
@@ -116,32 +121,32 @@ const in1 = new tracks.Track({
 //   tracks: tracks.tracks
 // })
 
-const consist = new Consist({
+var consist = new Consist({
   sequence: [
     Options.Car,
-    Options.Head,
     Options.Car,
-    Options.Car,
-    Options.Car
+    Options.Locomotive
   ],
   tracks: tracks.tracks
 });
 
-const loco = consist.getRollingStockByType(Options.Head)[1]
+setTimeout(() => {
+  consist.splitAt(1);
+}, 2000)
+
 document.addEventListener("keydown", (e) => {
-  if (e.keyCode == 38) loco.accelerateTo(1, 0.01);
-  else if (e.keyCode == 40) loco.accelerateTo(-1, 0.01);
+  if (e.keyCode == 38) activeConsist.accelerateTo(5);
+  else if (e.keyCode == 40) activeConsist.accelerateTo(-5);
 })
 
 document.addEventListener("keyup", (e) => {
-  if ([38,40].includes(e.keyCode)) loco.accelerateTo(0, 0.01);
+  if ([38,40].includes(e.keyCode)) activeConsist.accelerateTo(0);
 })
 
 setInterval(() => {
   trains.tickTrains(true);
   tracks.renderTracks();
 }, 10);
-
 
 const system = new TrackSystem({
   networks: {

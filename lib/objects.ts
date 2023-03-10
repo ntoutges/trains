@@ -9,7 +9,9 @@ export type ObjHeader = [track: Track, extra: number] | null;
 export class Obj {
   public p: Vector;
   public c: string;
+  public data: string;
   constructor(pos=new Vector({}), color:string="black") {
+    this.data = "";
     this.p = pos;
     this.c = color;
   }
@@ -128,7 +130,7 @@ export class AutoTracer extends Tracer {
   public s: number;
   public loop: boolean;
   constructor({
-    color="blue",
+    color="white",
     step=1
   }) {
     super({ color });
@@ -161,7 +163,7 @@ export class AutoTracer extends Tracer {
   }
 }
 
-export class LocomotiveTracer extends AutoTracer {
+export class HeadTracer extends AutoTracer {
   public acc: number;
   public tAcc: number;
   constructor({
@@ -178,13 +180,13 @@ export class LocomotiveTracer extends AutoTracer {
     this.tAcc = step;
     this.acc = 0;
   }
-  accelerateTo(velocity, acc=0.1) {
+  accelerateTo(velocity: number, acc=0.1) {
     this.tAcc = velocity;
     this.acc = Math.abs(acc) * sign(this.tAcc - this.s);
   }
   get velocity() { return this.s; }
   
-  tickO(originTrack) {
+  tickO(originTrack: Track) {
     this.s += this.acc;
     if (Math.abs(this.s - this.tAcc) < Math.abs(this.acc)) {
       this.acc = 0;
@@ -237,6 +239,12 @@ export class FastFollower extends Obj {
     return this.h[0].segment.direction;
   }
 
+  unRoot() {
+    if (this.r) this.r.unRoot(this);
+    const oldRoot = this.r;
+    this.r = null;
+    return oldRoot;
+  }
   reRoot(newRoot: Track) {
     if (this.r) this.r.unRoot(this);
     this.r = newRoot;

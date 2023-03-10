@@ -18,6 +18,16 @@
   transform: rotate(0rad);
   user-select: none;
 
+  pointer-events: all;
+
   /* transition-property: transform;
   transition-duration: 100ms; */
+}
+
+.trainParts:hover {
+  cursor: pointer;
+}
+
+.trainParts:not([data-focus]) {
+  opacity: 0.5;
 }
