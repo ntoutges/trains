@@ -6,18 +6,20 @@ import * as trains from "./trains.js";
 import { generateNetworks, TrackNetwork, TrackSystem } from "./metaTracks.js";
 import { activeConsist, Consist } from "./consist.js";
 import { Options } from "./consistLookup.js";
-import { HeadTracer } from "./objects.js";
+import * as builder from "./trackBuilder.js";
+import { JDON } from "./JDON.js";
 
 document.body.addEventListener("mousedown", (e) => {
 
   if (e.button == 1) {
-    grid.setDraggable(!grid.getDraggable())
+    // grid.setDraggable(!grid.getDraggable())
     e.preventDefault();
+    console.log(JSON.stringify(builder.getPointPairs()));
+    // builder.reset();
   }
   else if (e.button == 0) grid.dragging.startDrag(e.pageX, e.pageY);
   else if (e.button == 2) {
-    const v = new math.Vector({x:e.pageX*grid.pos.a - grid.pos.x, y:-e.pageY*grid.pos.a + grid.pos.y});
-    tracks.appendPoint(v);
+    builder.addPoint(e.pageX, e.pageY);
   }
 });
 document.body.addEventListener("mouseup", (e) => { grid.dragging.stopDrag(e.pageX, e.pageY); });
@@ -123,9 +125,12 @@ const in1 = new tracks.Track({
 
 var consist = new Consist({
   sequence: [
+    Options.Locomotive,
     Options.Car,
     Options.Car,
-    Options.Locomotive
+    Options.Car,
+    Options.Car,
+    Options.Car
   ],
   tracks: tracks.tracks
 });
@@ -135,8 +140,8 @@ var consist = new Consist({
 // }, 2000)
 
 document.addEventListener("keydown", (e) => {
-  if (e.keyCode == 38) activeConsist.accelerateTo(5);
-  else if (e.keyCode == 40) activeConsist.accelerateTo(-5);
+  if (e.keyCode == 38) activeConsist.accelerateTo(10);
+  else if (e.keyCode == 40) activeConsist.accelerateTo(-10);
 })
 
 document.addEventListener("keyup", (e) => {
@@ -148,55 +153,31 @@ setInterval(() => {
   tracks.renderTracks();
 }, 10);
 
-const system = new TrackSystem({
-  networks: generateNetworks({
-    "A": [
-      [0, 1200],
-      [1000,1000]
-    ],
-    "B": [
-      [0,0],
-      [1000,200]
-    ],
-    "C": [
-      [2000,1000],
-      [3000,1200]
-    ],
-    "D": [
-      [2000,200],
-      [3000,0]
-    ],
-    "E": [
-      [0,600],
-      [1000,600]
-    ]
-  }),
-  switches: {
-    "A": ["C"],
-    "B": ["D"],
-    "E": ["C", "D"]
-  }
+const data = new JDON({
+  filename: "/test.jdon"
 })
 
-// const ringTracks = tracks.generateRingTracks({
-//   origin: new math.Vector({
-//     x: 100,
-//     y: 100
-//   }),
-//   inAngles: [ 0,10,20,30,40,50,60,70,80,90 ],
-//   radius: 500
-// })
+data.onData(() => {
+  const systemData: Record<string, Array<[x: number, y:number]>> = {};
+  for (const property of data.getProps()) {
+    systemData[property] = JSON.parse(data.getProp(property));
+  }
+  
+  const system = new TrackSystem({
+    networks: generateNetworks(systemData),
+    switches: {
+      "MAIN": ["MAIN2", "SIDING"],
+      "MAIN2": ["LOOP"],
+      "SIDING": ["LOOP"],
+      "LOOP": ["MAIN"]
+    }
+  });
+  document.addEventListener("click", (e) => {
+    system.getBridgeFrom("MAIN").switchNext();
+  });
+  document.addEventListener("click", (e) => {
+    system.getBridgeFrom("MAIN2").switchNext();
+  })
 
-// const radial = new tracks.RadialSwitch({
-//   ring: ringTracks 
-// })
-
-tracks.addTracks(system.tracks);
-// tracks.appendTrack(ringTracks[0])
-// tracks.addTracks(ringTracks.slice(1))
-// tracks.addTracks([radial])
-
-document.body.addEventListener("click", () => {
-  system.getBridgeFrom("A").switchNext();
-  // radial.switchNext();
+  tracks.addTracks(system.tracks);
 })

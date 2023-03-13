@@ -8,6 +8,6 @@
     "lib": ["es2016", "DOM"]
   },
   "include": [
-    "./lib/*"
+    "lib/*"
   ]
 }

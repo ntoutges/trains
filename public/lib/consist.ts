@@ -113,18 +113,18 @@ export class Consist {
     this.head.accelerateTo(finalValue, acc);
   }
 
-  appendConsist(consist:Consist, direction:number = 1) { // +direction = this consist in front, -direction = other consist in front
-    if (direction < 0) return consist.appendConsist(this, -direction);
-    consist.head.coupleTo(this.tail);
+  // appendConsist(consist:Consist, direction:number = 1) { // +direction = this consist in front, -direction = other consist in front
+  //   if (direction < 0) return consist.appendConsist(this, -direction);
+  //   consist.head.coupleTo(this.tail);
 
-    for (let car of consist.trains) { this.t.push(car); }
-    consist.empty();
-  }
+  //   for (let car of consist.trains) { this.t.push(car); }
+  //   consist.empty();
+  // }
 
-  appendCar(car:RollingStock, type:Options=Options.Unknown) {
-    car.coupleTo(this.tail);
-    this.trains.push(car);
-  }
+  // appendCar(car:RollingStock, type:Options=Options.Unknown) {
+  //   car.coupleTo(this.tail);
+  //   this.trains.push(car);
+  // }
 
   splitAt(index: number) { // index marks the final car that is NOT removed
     if (index < 0) index += this.t.length-1;
